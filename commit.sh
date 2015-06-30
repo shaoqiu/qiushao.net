@@ -15,4 +15,6 @@ then
 fi
 
 git commit -m "update $COMMIT_FILE"
+git push origin master
+
 
