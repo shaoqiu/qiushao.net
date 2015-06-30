@@ -7,8 +7,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
     <title>一叶知秋</title>
     <meta name="description" content="">
+
     <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.min.css">
     <link href="//cdn.bootcss.com/highlight.js/8.6/styles/monokai_sublime.min.css" rel="stylesheet">
+
     <script src="//cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
     <script src="//cdn.bootcss.com/marked/0.3.2/marked.min.js"></script>
     <script src="//cdn.bootcss.com/highlight.js/8.6/highlight.min.js"></script>
@@ -62,7 +65,6 @@
             <input type="text" id="title_editor">
             <label>Tag</label>
             <input type="text" id="tag_editor">
-            <button id="commit_button" onclick="click_publish()">pub</button>
         </fieldset>
         <fieldset>
             <textarea id="markdown_editor" rows="26" spellcheck="false"></textarea>
@@ -79,6 +81,7 @@
 {% end %}
 
 {% if site.status == "write" %}
+<button id="commit_button" onclick="click_publish()">pub</button>
 <button id="edit_button" onclick="click_edit()">edit</button>
 <button id="del_button" onclick="click_del()">del</button>
 {% end %}
