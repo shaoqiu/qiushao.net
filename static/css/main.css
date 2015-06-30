@@ -371,9 +371,12 @@ Button:hover {
     top: 8px;
     right: 20px;
 }
-#edit_button {
+#edit_button, #preview_button {
     top: 8px;
     right: 80px;
+}
+#preview_button {
+    display: none;
 }
 #commit_button {
     top: 8px;

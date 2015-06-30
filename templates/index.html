@@ -81,11 +81,12 @@
 {% end %}
 
 {% if site.status == "write" %}
-<button id="commit_button" onclick="click_publish()">pub</button>
-<button id="edit_button" onclick="click_edit()">edit</button>
-<button id="del_button" onclick="click_del()">del</button>
+<button id="commit_button" onclick="click_publish()" title="save"><i class="fa fa-floppy-o fa-2x"></i></button>
+<button id="edit_button" onclick="click_edit()" title="edit"><i class="fa fa-pencil fa-2x"></i></button>
+<button id="preview_button" onclick="click_preview()" title="preview"><i class="fa fa-eye fa-2x"></i></button>
+<button id="del_button" onclick="click_del()" title="delete"><i class="fa fa-trash-o fa-2x"></i></button>
 {% end %}
-<button id="top_button" onclick="click_goTOP()">TOP</button>
+<button id="top_button" onclick="click_goTOP()" title="top"><i class="fa fa-arrow-circle-o-up fa-2x"></i></button>
 
 </body>
 <script type="text/javascript" src="/static/js/main.js"></script>

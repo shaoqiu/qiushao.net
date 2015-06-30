@@ -19,19 +19,22 @@ function click_login() {
 }
 
 function click_edit() {
-    if (document.getElementById("edit_button").innerHTML == "edit") {
-        document.getElementById("edit_button").innerHTML = "view";
-        document.getElementById("markdown_preview").style.display = "none";
-        document.getElementById("markdown_edit").style.display = "block";
-        document.getElementById("top_button").style.display = "none";
-    } else {
-        compileMarkdown(document.getElementById("markdown_editor").value);
-        document.getElementById("edit_button").innerHTML = "edit";
-        document.getElementById("markdown_preview").style.display = "block";
-        document.getElementById("markdown_edit").style.display = "none";
-        document.getElementById("top_button").style.display = "block";
-    }
+    document.getElementById("preview_button").style.display = "block";
+    document.getElementById("edit_button").style.display = "none";
+    document.getElementById("markdown_preview").style.display = "none";
+    document.getElementById("markdown_edit").style.display = "block";
+    document.getElementById("top_button").style.display = "none";
 }
+
+function click_preview() {
+    compileMarkdown(document.getElementById("markdown_editor").value);
+    document.getElementById("preview_button").style.display = "none";
+    document.getElementById("edit_button").style.display = "block";
+    document.getElementById("markdown_preview").style.display = "block";
+    document.getElementById("markdown_edit").style.display = "none";
+    document.getElementById("top_button").style.display = "block";
+}
+
 function click_del() {
     var title = document.getElementById("title_editor").value;
     var tag = document.getElementById("tag_editor").value;
@@ -39,7 +42,7 @@ function click_del() {
         type: "post",
         async: false,
         url: "/article",
-        data: {operator:"del", tag: tag, title: title},
+        data: {operator: "del", tag: tag, title: title},
         timeout: 10000,
         success: function () {
             alert("delete success " + title + " " + tag);
@@ -58,7 +61,7 @@ function click_publish() {
         type: "post",
         async: false,
         url: "/article",
-        data: {operator:"update", tag: tag, title: title, markdown:markdown},
+        data: {operator: "update", tag: tag, title: title, markdown: markdown},
         timeout: 10000,
         success: function () {
             alert("public success " + title + " " + tag);
@@ -70,7 +73,7 @@ function click_publish() {
     });
 }
 function click_goTOP() {
-   $("#content").animate({scrollTop:0}, 'slow');
+    $("#content").animate({scrollTop: 0}, 'slow');
 }
 function click_toc() {
     //$('#toc').toggle();
@@ -109,7 +112,7 @@ function compileMarkdown(datas) {
         hljs.highlightBlock(block);
     });
     $('a').attr('target', '_blank');
-    $("#content").animate({scrollTop:0}, 'slow');
+    $("#content").animate({scrollTop: 0}, 'slow');
 }
 function request_markdown(tag, title) {
     $.ajax({
