@@ -318,7 +318,6 @@
 }
 
 .toc_li:before {
-    content: "\e806";
     margin-right: 5px;
 }
 
@@ -332,14 +331,19 @@
 }
 
 .toc_h2 {
+    margin-left: 12px;
     font-size: .95em;
 }
 
 .toc_h3 {
-    margin-left: 12px;
+    margin-left: 20px;
     font-size: .9em;
 }
 
+.toc_h4 {
+    margin-left: 28px;
+    font-size: .8em;
+}
 .toc_h3 + .toc_h2 {
     padding-top: .25em;
 }

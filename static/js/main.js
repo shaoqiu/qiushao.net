@@ -76,7 +76,7 @@ function click_goTOP() {
     $("#content").animate({scrollTop: 0}, 'slow');
 }
 function click_toc() {
-    //$('#toc').toggle();
+    $('#toc').toggle();
 }
 function genTOC() {
     var toc = $('#toc_ul');
@@ -113,6 +113,7 @@ function compileMarkdown(datas) {
     });
     $('a').attr('target', '_blank');
     $("#content").animate({scrollTop: 0}, 'slow');
+    genTOC();
 }
 function request_markdown(tag, title) {
     $.ajax({
@@ -153,6 +154,4 @@ function onload() {
     });
 
     request_markdown("", "about");
-
-    genTOC();
 }
