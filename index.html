@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+
+
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+<title>一叶知秋</title>
+<meta name="description" content="">
+<link rel="stylesheet" type="text/css" href="/static/css/main.css">
+<link href="//cdn.bootcss.com/highlight.js/8.6/styles/monokai_sublime.min.css" rel="stylesheet">
+<script src="//cdn.bootcss.com/jquery/2.1.4/jquery.min.js"></script>
+<script src="//cdn.bootcss.com/marked/0.3.2/marked.min.js"></script>
+<script src="//cdn.bootcss.com/highlight.js/8.6/highlight.min.js"></script>
+</head>
+<body onload="onload()">
+<div id="login">
+<div id="login_form">
+<label class="close" onclick="click_close()"></label>
+<label class="avatar"></label>
+<form action="/login" method="post" name="login_form" onsubmit="return click_login()">
+<input type="text" id="username" name="user" placeholder="User Name" autofocus>
+<input type="password" id="password" name="password" placeholder="Password">
+<input type="submit" id="login_submit" value="Log in">
+</form>
+</div>
+</div>
+<aside id="sidebar">
+<div id="sidebar_left">
+<label class="avatar" onclick="click_avatar()"></label>
+<ul id="tags">
+<li class="tags_li active" data-filter="all">all<span class="post_count"></span></li>
+
+<li class="tags_li" data-filter="android">android<span class="post_count"></span></li>
+
+<li class="tags_li" data-filter="linux">linux<span class="post_count"></span></li>
+
+<li class="tags_li" data-filter="java">java<span class="post_count"></span></li>
+
+<li class="tags_li" data-filter="shell">shell<span class="post_count"></span></li>
+
+</ul>
+</div>
+<div id="sidebar_right">
+<input id="search_input" type="text" placeholder="Search...">
+<div id="posts">
+<ul id="posts_ul">
+
+<li class="posts_li" data-filter="java"><span class="pl_circle"></span>java反射
+</li>
+
+<li class="posts_li" data-filter="java"><span class="pl_circle"></span>单例模式的实现方法
+</li>
+
+<li class="posts_li" data-filter="shell"><span class="pl_circle"></span>shell数组
+</li>
+
+<li class="posts_li" data-filter="shell"><span class="pl_circle"></span>grep
+</li>
+
+</ul>
+</div>
+</div>
+</aside>
+<div id="content">
+<div id="markdown_preview"></div>
+<div id="markdown_edit" hidden="hidden">
+<fieldset>
+<label>Title</label>
+<input type="text" id="title_editor">
+<label>Tag</label>
+<input type="text" id="tag_editor">
+<input type="button" id="publish_button" value="Publish" onclick="click_publish()">
+</fieldset>
+<fieldset>
+<textarea id="markdown_editor" rows="32" spellcheck="false"></textarea>
+</fieldset>
+</div>
+</div>
+
+<button id="toc_button" onclick="click_toc()">TOC</button>
+<div id="toc">
+<span id="toc_title">目录</span>
+<ul id="toc_ul"></ul>
+</div>
+
+
+</body>
+<script type="text/javascript" src="/static/js/main.js"></script>
+</html>
