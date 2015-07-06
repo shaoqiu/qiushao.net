@@ -134,6 +134,18 @@ function request_markdown(tag, title) {
     });
 }
 
+function isMobile() {
+    var userAgentInfo = navigator.userAgent;
+    var Agents = ["Android", "iPhone",
+        "SymbianOS", "Windows Phone",
+        "iPad", "iPod"];
+    for (var v = 0; v < Agents.length; v++) {
+        if (userAgentInfo.indexOf(Agents[v]) > 0) {
+            return true;
+        }
+    }
+    return false;
+}
 function onload() {
     $(".tags_li").on("click", function () {
         $(this).addClass('active').siblings().removeClass('active');
@@ -151,6 +163,9 @@ function onload() {
         var tag = $(this).data('filter');
         var title = $(this).text();
         request_markdown(tag, title);
+        if (isMobile()) {
+            $("#sidebar").addClass("fullscreen");
+        }
     });
 
     request_markdown("", "about");

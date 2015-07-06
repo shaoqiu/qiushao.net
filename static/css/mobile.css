@@ -1,0 +1,19 @@
+@media screen and (max-width: 585px) {
+    #sidebar.fullscreen {
+        margin-left: -480px;
+    }
+
+    #sidebar_left, #toc_button {
+        display: none;
+    }
+
+    #sidebar_right {
+        margin-left: 0px;
+        width: 100%;
+    }
+
+    #content {
+        margin: 0 auto;
+    }
+
+}
