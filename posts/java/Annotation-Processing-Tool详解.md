@@ -425,4 +425,65 @@ public class Foo { // TypeElement
 	}
 }
 ```
-你得换个角度来看源代码。它只是结构化的文本而已。它不是可以执行的。你可以把它当作 你试图去解析的XML 文件。
+你得换个角度来看源代码。它只是结构化的文本而已。它不是可以执行的。你可以把它当作 你试图去解析的XML 文件。或者一棵编译中创建的抽象语法树。就像在 XML 解析器中，有许多DOM元素。你可以通过一个元素找到它的父元素或者子元素。
+例如：如果你有一个代表`public class Foo`的`TypeElement`，你就可以迭代访问它的子结点：
+```java
+TypeElement fooClass = ... ;
+for (Element e : fooClass.getEnclosedElements()){ // iterate over children
+	Element parent = e.getEnclosingElement();  // parent == fooClass
+}
+```
+如你所见，`Elements`代表源代码，`TypeElement`代表源代码中的元素类型，例如类。然后，`TypeElement`并不包含类的相关信息。你可以从`TypeElement`获取类的名称，但你不能获取类的信息，比如说父类。这些信息可以通过`TypeMirror`获取。你可以通过调用`element.asType()`来获取一个`Element`的`TypeMirror`。
+
+### 8. Searching For @Factory
+让我们一步一步来实现`process()`方法吧。首先我们扫描所有被`@Factory`注解的类：
+```java
+@Override
+public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+	for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(Factory.class)) {
+		...
+	}
+	return false;
+}
+```
+这里并没有什么高深的技术。`roundEnv.getElementsAnnotatedWith(Factory.class)` 返回一个被`@Factory`注解的元素列表。你可能注意到我避免说“返回一个被`@Factory`注解的类列表”。因为它的确是返回了一个`Element`列表。记住：`Element`可以是类，方法，变量等。所以，我们下一步需要做的是检查这个元素是否是一个类：
+```java
+@Override
+public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+	for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(Factory.class)) {
+		if(annotatedElement.getKind() != ElementKind.CLASS) {
+			...		
+			}
+	}
+	return false;
+}
+```
+为什么需要这样做呢？因为我们要确保只有**class**类型的元素被我们的处理器处理。前面我们已经学过，类是一种`TypeElement`元素。那我们为什么不使用`if (! (annotatedElement instanceof TypeElement))`  来检查呢？这是错误的判断，因为接口也是一种`TypeElement`类型。所以在注解处理器中，你应该避免使用`instanceof`，应该用`ElementKind`或者配合`TypeMirror`使用`TypeKind`。
+
+### 9. 错误处理
+在`init()`方法中，我们也获取了一个`Messager`的引用。`Messager`为注解处理器提供了一种报告错误消息，警告信息和其他消息的方式。它不是注解处理器开发者的日志工具。`Messager`是用来给那些使用了你的注解处理器的第三方开发者显示信息的。在[官方文档](http://docs.oracle.com/javase/7/docs/api/javax/tools/Diagnostic.Kind.html)中描述了不同级别的信息。非常重要的是`Kind.ERROR`，因为这种消息类型是用来表明我们的注解处理器在处理过程中出错了。有可能是第三方开发者误使用了我们的`@Factory`注解（比如，使用`@Factory`注解了一个接口）。这个概念与传统的 java 应用程序有一点区别。传统的 java 应用程序出现了错误，你可以抛出一个异常。如果你在`process()`中抛出了一个异常，那 jvm 就会崩溃。注解处理器的使用者将会得到一个从 javac 给出的非常难懂的异常错误信息。因为它包含了注解处理器的堆栈信息。因此注解处理器提供了`Messager`类。它能打印漂亮的错误信息，而且你可以链接到引起这个错误的元素上。在现代的IDE中，第三方开发者可以点击错误信息，IDE会跳转到产生错误的代码行中，以便快速定位错误。
+回到`process()`方法的实现。如果用户将`@Factory`注解到了一个非`class`的元素上，我们就抛出一个错误信息：
+```java
+	@Override
+	public boolean process(Set<? extends TypeElement> annotations,
+			RoundEnvironment roundEnv) {
+		for (Element annotatedElement : roundEnv.getElementsAnnotatedWith(Factory.class)) {
+			if(annotatedElement.getKind() != ElementKind.CLASS) {
+				error(annotatedElement, "Only classes can be annotated with @%s",
+			            Factory.class.getSimpleName());
+				return true; // Exit processing
+			}
+	    }
+		return false;
+	}
+
+	private void error(Element e, String msg, Object... args) {
+	    messager.printMessage(
+	    	Diagnostic.Kind.ERROR,
+	    	String.format(msg, args),
+	    	e);
+	  }
+```
+为了能够获取`Messager`显示的信息，非常重要的是注解处理器必须不崩溃地完成运行。这就是我们在调用`error()`后执行`return true`的原因。如果我们在这里没有返回的话，`process()`就会继续运行，因为`messager.printMessage( Diagnostic.Kind.ERROR)`并不会终止进程。如果我们没有在打印完错误信息后返回的话，我们就可能会运行到一个空指针异常等等。就像前面所说的，如果我们继续运行`process()`，一旦有处理的异常在`process()`中被抛出，javac 就会打印注解处理器的空指针异常堆栈信息，而不是`Messager`显示的信息。
+
+### 10. 数据模型
