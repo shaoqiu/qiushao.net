@@ -101,3 +101,328 @@ MyProcess.jar
 com.example.MyProcess
 com.example.AnotherProcess
 ```
+
+### 4. 例子：工厂模式
+现在可以举一个实际的例子了。我们使用`Eclipse`作为开发环境（原文使用的是 maven，但我对 maven 不熟悉，也没有 maven 环境，所以将开发环境改成了 Eclipse）。最后我将会把例子的代码放到 `github`上。
+首先，我必须要说的是，想要找到一个可以使用注解处理器去解决的简单问题来当作教程，并不是一件容易的事。这篇教程中，我们将实现一个非常简单的工厂模式（不是抽象工厂模式）。它只是为了给你简明的介绍注解处理器的API而已。所以这个问题的程序，并不是那么有用，也不是一个真实开发中的例子。再次声明，你能学到的只是注解处理器的相关内容，而不是设计模式。
+
+我们要解决的问题是：我们要实现一个 pizza 店，这个 pizza 店提供给顾客两种 pizza （Margherita 和 Calzone），还有甜点 Tiramisu（提拉米苏）。
+简单看一下这段代码：
+`Meal.java`：
+```java
+package com.example.pizza;
+
+public interface Meal {
+	public float getPrice();
+}
+```
+
+`MargheritaPizza.java`：
+```java
+package com.example.pizza;
+
+public class MargheritaPizza implements Meal{
+	@Override
+	public float getPrice() {
+		return 6.0f;
+	}
+}
+```
+
+`CalzonePizza.java`：
+```java
+package com.example.pizza;
+
+public class CalzonePizza implements Meal{
+	@Override
+	public float getPrice() {
+		return 8.5f;
+	}
+}
+```
+
+`Tiramisu.java`：
+```java
+package com.example.pizza;
+
+public class Tiramisu implements Meal{
+	@Override
+	public float getPrice() {
+		return 4.5f;
+	}
+}
+```
+
+顾客要在我们的 pizza 店购买食物的话，就得输入食物的名称：
+`PizzaStore.java`：
+```java
+package com.example.pizza;
+
+import java.util.Scanner;
+
+public class PizzaStore {
+
+	public Meal order(String mealName) {
+		if (null == mealName) {
+			throw new IllegalArgumentException("name of meal is null!");
+		}
+		if ("Margherita".equals(mealName)) {
+			return new MargheritaPizza();
+		}
+
+		if ("Calzone".equals(mealName)) {
+			return new CalzonePizza();
+		}
+
+		if ("Tiramisu".equals(mealName)) {
+			return new Tiramisu();
+		}
+
+		throw new IllegalArgumentException("Unknown meal '" + mealName + "'");
+	}
+
+	private static String readConsole() {
+		Scanner scanner = new Scanner(System.in);
+		String meal = scanner.nextLine();
+		scanner.close();
+		return meal;
+	}
+	
+	public static void main(String[] args) {
+		System.out.println("welcome to pizza store");
+		PizzaStore pizzaStore = new PizzaStore();
+		Meal meal = pizzaStore.order(readConsole());
+		System.out.println("Bill:$" + meal.getPrice());
+	}
+}
+```
+
+正如你所见，在`order()`方法中，我们有许多 if 条件判断语句。并且，如果我们添加一种新的 pizza 的话，我们就得添加一个新的 if 条件判断。但是等一下，使用注解处理器和工厂模式，我们可以让一个注解处理器生成这些 if 语句。如此一来，我们想要的代码就像这样子：
+`PizzaStore.java`：
+```java
+package com.example.pizza;
+
+import java.util.Scanner;
+
+public class PizzaStore {
+
+	private MealFactory factory = new MealFactory();
+	
+	public Meal order(String mealName) {
+		return factory.create(mealName);
+	}
+
+	private static String readConsole() {
+		Scanner scanner = new Scanner(System.in);
+		String meal = scanner.nextLine();
+		scanner.close();
+		return meal;
+	}
+	
+	public static void main(String[] args) {
+		System.out.println("welcome to pizza store");
+		PizzaStore pizzaStore = new PizzaStore();
+		Meal meal = pizzaStore.order(readConsole());
+		System.out.println("Bill:$" + meal.getPrice());
+	}
+}
+```
+
+`MealFactory` 类应该是这样的：
+`MealFactory.java`：
+```java
+package com.example.pizza;
+
+public class MealFactory {
+
+	public Meal create(String id) {
+		if (id == null) {
+			throw new IllegalArgumentException("id is null!");
+		}
+		if ("Calzone".equals(id)) {
+			return new CalzonePizza();
+		}
+
+		if ("Tiramisu".equals(id)) {
+			return new Tiramisu();
+		}
+
+		if ("Margherita".equals(id)) {
+			return new MargheritaPizza();
+		}
+
+		throw new IllegalArgumentException("Unknown id = " + id);
+	}
+}
+```
+
+### 5. @Factory Annotation
+能猜到么，我们打算使用注解处理器生成`MealFactory`类。更一般的说，我们想要提供一个注解和一个处理器用来生成工厂类。
+让我们看一下`@Factory`注解：
+`Factory.java`：
+```java
+package com.example.apt;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.CLASS)
+public @interface Factory {
+
+	/**
+	 * The name of the factory
+	 */
+	Class<?> type();
+
+	/**
+	 * The identifier for determining which item should be instantiated
+	 */
+	String id();
+}
+```
+
+思想是这样的：我们注解那些食物类，使用`type()`表示这个类属于哪个工厂，使用`id()`表示这个类的具体类型。让我们将`@Factory`注解应用到这些类上吧：
+`MargheritaPizza.java`：
+```java
+package com.example.pizza;
+
+import com.example.apt.Factory;
+
+@Factory(type=MargheritaPizza.class, id="Margherita")
+public class MargheritaPizza implements Meal{
+
+	@Override
+	public float getPrice() {
+		return 6.0f;
+	}
+}
+```
+
+`CalzonePizza.java`：
+```java
+package com.example.pizza;
+
+import com.example.apt.Factory;
+
+@Factory(type=CalzonePizza.class, id="Calzone")
+public class CalzonePizza implements Meal{
+
+	@Override
+	public float getPrice() {
+		return 8.5f;
+	}
+}
+```
+
+
+`Tiramisu.java`：
+```java
+package com.example.pizza;
+
+import com.example.apt.Factory;
+
+@Factory(type=Tiramisu.class, id="Tiramisu")
+public class Tiramisu implements Meal{
+
+	@Override
+	public float getPrice() {
+		return 4.5f;
+	}
+}
+```
+
+你可能会问，我们是不是可以只将`@Factory`注解应用到`Meal`接口上？答案是不行，因为注解是不能被继承的。即在`class X`上有注解，`class Y extends X`，那么`class Y`是不会继承`class X`上的注解的。在我们编写处理器之前，需要明确几点规则：
+1. 只有类能够被`@Factory`注解，因为接口和虚类是不能通过`new`操作符实例化的。
+2. 被`@Factory`注解的类必须提供一个默认的无参构造函数。否则，我们不能实例化一个对象。
+3. 被`@Factory`注解的类必须直接继承或者间接继承`type`指定的类型。（或者实现它，如果`type`指定的是一个接口）
+4. 被`@Factory`注解的类中，具有相同的`type`类型的话，这些类就会被组织起来生成一个工厂类。工厂类以`Factory`作为后缀，例如：`type=Meal.class`将会生成`MealFactory`类。
+5. `id`的值只能是字符串，且在它的`type`组中必须是唯一的。
+
+### 6. 注解处理器
+我将会通过添加一段代码接着解释这段代码的方法，一步一步引导你。三个点号（`...`）表示省略那部分前面已经讨论过或者将在后面讨论的代码。目的就是为了让代码片段更具有可读性。前面已经说过，我们的完整代码将放到`github`上。OK，让我们开始编写我们的`FactoryProcessor`的框架吧：
+`FactoryProcessor.java`：
+```java
+package com.example.apt;
+
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.Messager;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+
+public class FactoryProcessor extends AbstractProcessor {
+
+	private Types typeUtils;
+	private Elements elementUtils;
+	private Filer filer;
+	private Messager messager;
+	private Map<String, FactoryGroupedClasses> factoryClasses = 
+			new LinkedHashMap<String, FactoryGroupedClasses>();
+
+	@Override
+	public synchronized void init(ProcessingEnvironment processingEnv) {
+		super.init(processingEnv);
+		typeUtils = processingEnv.getTypeUtils();
+	    elementUtils = processingEnv.getElementUtils();
+	    filer = processingEnv.getFiler();
+	    messager = processingEnv.getMessager();
+	}
+
+	@Override
+	public boolean process(Set<? extends TypeElement> arg0,
+			RoundEnvironment arg1) {
+		...
+		return false;
+	}
+
+	@Override
+	public Set<String> getSupportedAnnotationTypes() {
+		Set<String> annotataions = new LinkedHashSet<String>();
+	    annotataions.add(Factory.class.getCanonicalName());
+	    return annotataions;
+	}
+
+	@Override
+	public SourceVersion getSupportedSourceVersion() {
+		return SourceVersion.latestSupported();
+	}
+}
+```
+
+在`getSupportedAnnotationTypes()`方法中，我们指定`@Factory`注解将被这个处理器处理。
+
+### 7. Elements and TypeMirrors
+在`init()`方法中，我们使用了以下类型：
+- Elements：一个用来处理`Element`的工具类（后面详细说明）
+- Types：一个用来处理`TypeMirror`的工具类（后面详细说明）
+- Filer：正如这个类的名字所示，你可以使用这个类来创建文件
+
+在注解处理器中，我们扫描 java 源文件，源代码中的每一部分都是`Element`的一个特定类型。换句话说：`Element`代表程序中的元素，比如说 包，类，方法。每一个元素代表一个静态的，语言级别的结构。在下面的例子中，我将添加注释来说明这个问题：
+```java
+package com.example;
+
+public class Foo { // TypeElement
+
+	private int a; // VariableElement
+	private Foo other; // VariableElement
+
+	public Foo() {} // ExecuteableElement
+
+	public void setA( // ExecuteableElement
+			int newA // TypeElement
+	) {
+	}
+}
+```
+你得换个角度来看源代码。它只是结构化的文本而已。它不是可以执行的。你可以把它当作 你试图去解析的XML 文件。
