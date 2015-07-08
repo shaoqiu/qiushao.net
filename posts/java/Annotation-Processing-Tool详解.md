@@ -487,3 +487,56 @@ public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment 
 为了能够获取`Messager`显示的信息，非常重要的是注解处理器必须不崩溃地完成运行。这就是我们在调用`error()`后执行`return true`的原因。如果我们在这里没有返回的话，`process()`就会继续运行，因为`messager.printMessage( Diagnostic.Kind.ERROR)`并不会终止进程。如果我们没有在打印完错误信息后返回的话，我们就可能会运行到一个空指针异常等等。就像前面所说的，如果我们继续运行`process()`，一旦有处理的异常在`process()`中被抛出，javac 就会打印注解处理器的空指针异常堆栈信息，而不是`Messager`显示的信息。
 
 ### 10. 数据模型
+在我们继续检查被`@Factory`注解的类是否满足我们前面所说的五条规则之前，我们先介绍一个数据结构，它能让我们更方便的继续处理接下来的工作。有时候问题或者处理器看起来太过简单了，导致一些程序员倾向于用面向过程的方法编写整个处理器。但你知道吗？一个注解处理器仍然是一个 java 程序。所以我们应该使用面向对象，接口，设计模式以及任何你可能在其他普通Java程序中使用的技巧。
+虽然我们的`FactoryProcessor`非常简单，但是我们仍然想将一些信息作为对象保存。在`FactoryAnnotationClass`中，我们保存被注解的类的数据，比如合法的类名以及`@Factory`注解本身的一些数据。所以，我们保存`TypeElement`和处理过的`@Factory`注解： 
+`FactoryAnnotationClass.java`：
+```java
+
+```
+看起来有很多代码，但是最重要的代码在构造函数中，你可以看到如下的代码：
+```java
+
+```
+这里，我们获取`@Factory`注解，并检查`id`是否为空。如果`id`为空，我们将会抛出一个`IllegalArgumentException`异常。你可能感到疑惑的是，前面我们说了不要抛出异常，而是使用Messager。但这并不矛盾。我们在这里抛出一个内部异常，后面你将会看到我们在`process()`中捕获了这个异常。我们有两个这样做的理由：
+1. 我想说明你应该仍然像普通的Java程序一样编码。抛出和捕获异常被认为是一个好的Java编程实践。
+
+2.  如果我们想要在FactoryAnnotatedClass中正确地打印信息，我们也需要传入Messager对象，就像我们在错误处理一节中已经提到的，注解处理器必须成功结束，才能让`Messager`打印错误信息。如果我们想使用`Messager`打印一个错误信息，我们应该怎样通知`process()`发生了一个错误？最简单的方法，并且我认为了直观的方法，就是抛出一个异常然后让步`process()`捕获它。
+
+接下来，我们将获取`@Fractory`注解中的`type`成员域。我们比较感兴趣的是合法的全名： 
+```java
+
+```
+这有点棘手，因为这里的类型是`java.lang.Class`。那意味着，这是一个真实的`Class`对象。因为注解处理器在编译 java 源码之前执行，所以我们必须得考虑两种情况：
+1.  这个类已经被编译过了：这种情况是第三方 .jar 包含已编译的被`@Factory`注解 .class 文件。这种情况下，我们可以像`try` 代码块中所示那样直接获取Class。 (译注：因为`@Factory`的`@Retention`为`RetentionPolicy.CLASS`，所有被编译过的代码也会保留`@Factory`的注解信息)
+2.  这个类还没有被编译：这种情况是我们尝试编译被`@Fractory`注解的源代码。这种情况下，直接获取`Class`会抛出`MirroredTypeException`异常。幸运的是，`MirroredTypeException`包含一个`TypeMirror`，它表示我们未被编译类。因为我们知道它一定是一个`Class`类型（我们前面有检查过），所以我们可以将它转换为`DeclaredType`， 然后获取`TypeElement`来读取合法名称。
+
+好了，我们还需要一个叫`FactoryGroupedClasses`的数据结构，用来简单的组合所有的`FactoryAnnotatedClasses`到一起。
+```java
+
+```
+如你所见，它只是一个基本的`Map<String, FactoryAnnotatedClass>`，这个`map`用来映射`@Factory.id()`到`FactoryAnnotatedClass`。我们选择使用`Map`，是因为我们想确保每一个`id`都的唯一的。使用`map`查找，这可以很容易实现。`generateCode()`将会被调用来生成工厂在的代码（稍后讨论）。
+
+### 11. 匹配准则
+让我们来继续实现`process()`方法。接下来我们要检查被注解的类至少有一个公有构造函数，不是抽象类，继承了特定的类，以及是一个`public`类：
+```java
+
+```
+我们添加了一个`isValidClass()`方法，它检查是否我们所有的规则都被满足了：
+- 类必须是`public`的：`classElement.getModifiers().contains(Modifier.PUBLIC)`
+- 类不能是抽象的：`classElement.getModifiers().contains(Modifier.ABSTRACT)`
+-  类必须是`@Factoy.type()`指定的类型的子类或者接口的实现：首先，我们使用`elementUtils.getTypeElement(item.getQualifiedFactoryGroupName())`来创建一个元素。没错，你可以创建一个`TypeElement`（使用`TypeMirror`），只要你知道合法的类名称。然后我们检查它是一个接口还是一个类：`superClassElement.getKind() == ElementKind.INTERFACE`。有两种情况：如果它是一个接口，就判断`classElement.getInterfaces().contains(superClassElement.asType())`。如果是类，我们就必须使用`currentClass.getSuperclass()`扫描继承树。注意，整个检查也可以使用`typeUtils.isSubtype()`来实现。
+-  类必须有一个`public`的无参构造函数：我们遍历所有该类直接封装的元素`classElement.getEnclosedElements()`，然后检查`ElementKind.CONSTRUCTOR`，` Modifier.PUBLIC` 和 `constructorElement.getParameters().size() == 0`
+
+如果以上这些条件全都满足，则`isValidClass()`返回 `true`，否则，它打印一个错误信息然后返回 `false`。
+
+### 11. 组合被注解的类
+
+### 12. 生成代码
+
+### 13. 处理循环
+
+### 14. 分离处理器和注解
+
+### 15. 实例化生成的类
+
+### 16. 总结
