@@ -25,7 +25,7 @@ sudo apt-get install -f
 
 ### 2.安装sublime text 补丁
 新建文件sub-fcitx.c, 将下面的代码复制进去 
-```
+```c
 /*
    sublime-imfix.c
    Use LD_PRELOAD to interpose some function to fix sublime input method support for linux.
