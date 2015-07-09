@@ -1,3 +1,14 @@
+markdown基本语法
+------
+**create time: 2015-06-25; update time: 2015-07-09**
+
+---------------------------------------------------------------
+
+这个博客的所有文章都是使用`Markdown`语法来写的。`Markdown`是一种非常适合写文章的语法。有很多网站都支持使用`Markdown`来写文章或评论。比如[Github](http://github.com/)的仓库介绍文件`README.md`就可以用`Markdown`语法来写。[stackoverflow](http://stackoverflow.com/)也是使用`Markdown`语法来写评论，提问题的。国内的各大博客网站也都支持`Markdown`语法。比如[CSDN](http://www.csdn.net/),[oschina](http://www.oschina.net/)。
+
+那么问题来了，使用什么工具来写`Markdown`呢。这里推荐两个在线的编辑工具[马克飞象](http://maxiang.info/)和[作业部落](https://www.zybuluo.com/mdeditor)。都是非常优秀的产品。
+下面介绍一下`Markdown`的基本语法：
+
 ### 1. 标题
 markdown 中有两种方法标志某一行为标题。
 #### 1.1. 行首为 `#` 号
