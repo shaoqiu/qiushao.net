@@ -8,7 +8,7 @@ apt的基本用法
     JSR 269, also known as the Language Model API, has two basic pieces: an API that models the Java programming language, and an API for writing annotation processors. This functionality is accessed through new options to the javac command; by including JSR 269 support, javac now acts analogously to the apt command in JDK 5.
 
 
-### 2. 怎样使用`apt`
+### 2. eclipse中怎样使用`apt`
 下面通过一个简单的例子来演示`apt`的使用方法。这个例子的目标是：
 > 通过定义一个`Annotation`，在编译代码的时候，凡是用该`Annotation`注解过的类，方法，我们都要输出他们的警告信息
 
@@ -96,8 +96,26 @@ public class Main {
 保存代码后，就会发现使用了注解的地方都有警告，如图所示：
 <img src="http://i1.tietuku.com/502d7eae97d5e9f5.png">
 
+### 3. android studio中怎样使用apt
+代码例子就不说了，只说怎样配置使用apt。
+首先要明确的是：Android Studio里面有两个`build.gradle`。一个是Module(=Eclipse的project)，一个是Project(=Eclipse的workspace) 
 
-### 3. `apt`能用来干什么
+STEP 1：打开Android Studio里Project的build.gradle，加入下面几行： 
+```
+classpath 'org.robolectric:robolectric-gradle-plugin:0.+'
+classpath 'com.neenbedankt.gradle.plugins:android-apt:1.+' 
+```
 
-
-### 4. 工程示例
+STEP 2：打开Module的build.grade，加入你要使用的带APT注解处理器的jar包： 
+文件开头加入依赖:
+```
+apply plugin:'com.android.application'
+apply plugin:'android-apt'
+```
+加入JAR包：
+```
+dependencies {
+compile files('libs/SimpleDAO.jar')
+apt files('libs/SimpleDAO.jar')
+}
+```
