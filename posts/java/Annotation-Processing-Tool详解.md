@@ -998,5 +998,7 @@ public class PizzaStore {
 最后一段是作者的提醒，原文如下：
 > Please note that parts of the code of FactoryProcessor has some edges and pitfalls. These “mistakes” are placed explicit by me to struggle through them as I explain common mistakes while writing annotation processors (like “Attempt to recreate a file”). If you start writing your own annotation processor based on FactoryProcessor DON’T copy and paste this pitfalls. Instead you should avoid them from the very beginning.
 
-
-这篇文章使用的是 `maven`来管理工程的，如果是使用 eclipse, 或者 android studio 作为开发环境的话，APT 的配置使用方法参见另外一篇文章《apt的基本用法》
+<br/>
+<br/>
+这篇文章使用的是 `maven`来管理工程的，如果是使用 eclipse, 或者 android studio 作为开发环境的话，APT 的配置使用方法参见另外一篇文章《apt的基本用法》。
+关于APT的的真实使用场景，可以参考[`SimpleDAO`](https://github.com/zxfrdas/SimpleDAO) 一个数据库ORM框架。
