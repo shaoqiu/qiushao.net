@@ -1,7 +1,7 @@
 Annotation Processing Tool 详解
 ------
 
-关于APT（Annotation Processing Tool 简称）的讲解资料很少，幸运地找到了一篇英文的讲解，觉得挺详细的，就翻译过来。[原文](http://hannesdorfmann.com/annotation-processing/annotationprocessing101/) 顺便添加了一些自己的理解，及扩展。
+关于APT（Annotation Processing Tool 简称）的讲解资料很少，幸运地找到了一篇英文的讲解，觉得挺详细的，就翻译过来。[原文](http://hannesdorfmann.com/annotation-processing/annotationprocessing101/) 顺便添加了一些自己的理解，及扩展，也去掉了一些觉得没什么用的讨论。
 
 ---------------------------------------------------------------------------------------------------------------
 在这篇文章中我将阐述如何实现一个注解处理器。首先我将向你解释什么是注解处理器，你可以使用这个强大的工具来做什么及不能做什么。接下来我们将一步一步来实现一个简单的注解处理器。
