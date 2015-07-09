@@ -1,5 +1,9 @@
-Annotation Processing Tool 详解
+Annotation Processing Tool详解
 ------
+**create time: 2015-07-07; update time: 2015-07-09**
+
+---------------------------------------------------------------
+
 
 关于APT（Annotation Processing Tool 简称）的讲解资料很少，幸运地找到了一篇英文的讲解，觉得挺详细的，就翻译过来。[原文](http://hannesdorfmann.com/annotation-processing/annotationprocessing101/) 顺便添加了一些自己的理解，及扩展，也去掉了一些觉得没什么用的讨论。
 
