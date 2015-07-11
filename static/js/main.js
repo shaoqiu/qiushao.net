@@ -106,6 +106,7 @@ function genTOC() {
         });
     });
 }
+
 function compileMarkdown(datas) {
     markdown_preview.innerHTML = marked(datas);
     $('pre code').each(function (i, block) {
@@ -115,6 +116,19 @@ function compileMarkdown(datas) {
     $("#content").animate({scrollTop: 0}, 'slow');
     genTOC();
 }
+
+function loadDuoshuoComments() {
+    document.getElementById("comment-box").innerHTML = "";
+    var tag = document.getElementById("tag_editor").value;
+    var title = document.getElementById("title_editor").value;
+    var el = document.createElement('div');//该div不需要设置class="ds-thread"
+    el.setAttribute('data-thread-key', tag + "_" + title);//必选参数
+    el.setAttribute('data-title', title);
+    el.setAttribute('data-url', 'qiushao.net/article?tag=' + tag + "&title=" + title);//必选参数
+    DUOSHUO.EmbedThread(el);
+    document.getElementById("comment-box").appendChild(el);
+}
+
 function request_markdown(tag, title) {
     $.ajax({
         type: "get",
@@ -127,6 +141,7 @@ function request_markdown(tag, title) {
             document.getElementById("tag_editor").value = tag;
             document.getElementById("markdown_editor").value = datas;
             compileMarkdown(datas);
+            loadDuoshuoComments();
         },
         error: function () {
             alert("request failed");
