@@ -1,6 +1,6 @@
 java动态加载JAR包
 ------
-**create time: 2015-07-10; update time: 2015-07-10**
+**create time: 2015-07-10; update time: 2015-07-12**
 
 ---------------------------------------------------------------
 
@@ -15,18 +15,18 @@ java动态加载JAR包
 
 好了，有以上的约定就可以开始了。下面我们就来举个小例子来讨论一下。
 #### 2.1. 首先由宿主程序提供一个接口
-新建一个 JAVA 工程**Shape**，创建以下文件。<br/>
+新建一个 JAVA 工程**Host**，作为宿主工程，创建一个包`com.shaoqiu.shape`，在这个包下面创建一个接口。<br/>
 `Shape.java`：
 ```java
 package com.shaoqiu.shape;
-
 public interface Shape {
 	public void shapeName();
 }
 ```
-这就是宿主程序提供的接口，这个接口是一个形状，有一个方法用来打印自己的形状名称。将这个工程导出为一个`jar`文件，名为`shape.jar`，后面的插件开发都需要导入这个`jar`文件。导出的时候记得不要勾选`.classpath`和`.project`文件
+这就是宿主程序提供的接口，这个接口是一个形状，有一个方法用来打印自己的形状名称。将这个接口导出为一个`jar`文件，名为`shape.jar`，后面的插件开发都需要导入这个`jar`文件。导出的时候记得只选与接口相关的文件！此处只选`com.shaoqiu.shape`包。
+
 #### 2.2. 实现插件
-新建另一个 JAVA 工程作为插件工程，名为**Circle**，导入上面的`shape.jar`，并创建以下文件。<br/>
+新建另一个 JAVA 工程**Circle**，作为插件工程，导入上面的`shape.jar`。创建一个包`com.shaoqiu.shape.circle`，在这包下面并创建以下文件。<br/>
 `Circle.java`：
 ```java
 package com.shaoqiu.shape.circle;
@@ -39,10 +39,10 @@ public class Circle implements Shape{
 	}
 }
 ```
-将这个工程导出为`com.shaoqiu.shape.circle.Circle_0.01.jar`，导出的时候记得不要勾选`shape.jar`还有`.classpath`和`.project`文件，这样我们的第一个插件就已经完成了。
+将这个工程导出为`com.shaoqiu.shape.circle.Circle_0.01.jar`，导出的时候记得**不要勾选`shape.jar`还有`.classpath`和`.project`文件**，这样我们的第一个插件就已经完成了。
 
 #### 2.2. 实现宿主程序
-新建另一个 JAVA 工程作为宿主工程，名为**Host**，导入上面的`shape.jar`，创建以下文件。 <br/>
+回到宿主工程**Host**，创建一个包`com.shaoqiu.host`，在这个包下面创建以下文件。 <br/>
 `Main.java`：
 ```java
 package com.shaoqiu.host;
@@ -50,40 +50,41 @@ package com.shaoqiu.host;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
+
 import com.shaoqiu.shape.Shape;
 
 public class Main {
-
-	public static void main(String[] args) {
-		System.out.println("running host...");
+	public static void main(String[] args){
+		System.out.println("running in host...");
 		String urlPattern = "file:///";
-		String pluginPath = "D:/plugins";
+        String pluginPath = "plugins";
 
-		File plugin = new File(pluginPath);
-		File[] jarList = plugin.listFiles();
+        File plugin = new File(pluginPath);
+        File[] jarList = plugin.listFiles();
 
-		ClassLoader cl = null;
-		String jarPath = null;
-		String className = null;
-		try {
-			for (File jar : jarList) {
-				className = jar.getName().split("_")[0];
-				jarPath = urlPattern + pluginPath + "/" + jar.getName();
-				cl = new URLClassLoader(new URL[] { new URL(jarPath) });
-				Class<?> c = cl.loadClass(className);
-				Shape impl = (Shape) c.newInstance();
-				impl.shapeName();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+        ClassLoader cl = null;
+        String jarPath = null;
+        String className = null;
+        try {
+            for (File jar : jarList) {
+                className = jar.getName().split("_")[0];
+                jarPath = urlPattern + jar.getAbsolutePath();
+                cl = new URLClassLoader(new URL[] { new URL(jarPath) });
+                Class<?> c = cl.loadClass(className);
+                Shape impl = (Shape) c.newInstance();
+                impl.shapeName();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 	}
 }
+
 ```
 
-我们的插件目录为`String pluginPath = "D:/plugins"`，所以需要在D盘下创建一个`plugins`目录，将前面导出的`com.shaoqiu.shape.circle.Circle_0.01.jar`插件放到这个目录。执行宿主程序就可以看到：
+我们的插件目录为`plugins"`，所以需要在**Host**工程目录下创建一个`plugins`目录，将前面导出的`com.shaoqiu.shape.circle.Circle_0.01.jar`插件放到`plugins`目录。执行宿主程序就可以看到：
 ```
 running host...
 I am Circle
 ```
-宿主程序成功调用了`Circle`插件的方法。
+可以看到宿主程序成功调用了`Circle`插件的方法。
