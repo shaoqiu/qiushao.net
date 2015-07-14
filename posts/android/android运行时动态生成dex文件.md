@@ -35,6 +35,7 @@ public class Fibonacci {
 ```java
 TypeId<?> fibonacci = TypeId.get("Lcom/google/dexmaker/examples/Fibonacci;");
 ```
+其中`Lcom/google/dexmaker/examples/Fibonacci;`是`com.google.dexmaker.examples.Fibonacii`在字节码中的全限定名称表示。关于这方面的知识可以参考《深入理解java虚拟机》第6.3.5 章节。
 接下来，我们声明这个类。我们可以指定这个类型的源文件用于堆栈跟踪，它的访问标志，它的父类，还有它实现的接口。在这个例子中，`Fibonacci`是一个`public`类，继承了`Object`类：
 ```java
 String fileName = "Fibonacci.generated";
@@ -100,6 +101,8 @@ Class<?> fibonacciClass = loader.loadClass("com.google.dexmaker.examples.Fibonac
 Method fibMethod = fibonacciClass.getMethod("fib", int.class);
 System.out.println(fibMethod.invoke(null, 8));
 ```
+
+至此我们的 `Fibonacci`类终于完成了。回头看看还是挺复杂的。需要我们将复杂的表达式简化，简化成能够直接转化成汇编代码的形式，也就是相当于我们在直接写汇编代码，只不过是`Dalvik`虚拟机的汇编代码而已。
 
 最后附上完整的代码：
 ```java
