@@ -1,6 +1,6 @@
 android应用安装流程
 ------
-**create time: 2015-07-17; update time: 2015-07-20**
+**create time: 2015-07-17; update time: 2015-07-21**
 
 ---------------------------------------------------------------
 
@@ -206,7 +206,118 @@ WTFC，绕来绕去，绕了这么一大个圈。
 ```
 `AsecInstallArgs`表示安装到SD卡，`FileInstallArgs`表示安装到系统内部存储（EMMC）。这里我们假设安装到内部存储。下面转到`FileInstallArgs.copyApk`：
 ```java
+                ......
+                //创建一个临时文件夹：/data/app/vmdlxxx.tmp,“xxx”为一个随机数
+                final File tempDir = mInstallerService.allocateInternalStageDirLegacy();
+                codeFile = tempDir;
+                resourceFile = tempDir;
+                ......
 
+                //这个回调接口会由imcs 服务回调
+                final IParcelFileDescriptorFactory target = new IParcelFileDescriptorFactory.Stub() {
+                @Override
+                public ParcelFileDescriptor open(String name, int mode) throws RemoteException {
+                    if (!FileUtils.isValidExtFilename(name)) {
+                        throw new IllegalArgumentException("Invalid filename: " + name);
+                    }
+                    try {
+                        final File file = new File(codeFile, name);
+                        final FileDescriptor fd = Os.open(file.getAbsolutePath(),
+                                O_RDWR | O_CREAT, 0644);
+                        Os.chmod(file.getAbsolutePath(), 0644);
+                        return new ParcelFileDescriptor(fd);
+                    } catch (ErrnoException e) {
+                        throw new RemoteException("Failed to open: " + e.getMessage());
+                    }
+                }
+            };
+
+            int ret = PackageManager.INSTALL_SUCCEEDED;
+            //通过 imcs 服务，把APK文件复制到 /data/app/vmdlxxx.tmp 目录下
+            //imcs 服务为 DefaultContainerService.java 
+            //搞了这么复杂就是为了把原始的APK复制到 /data/app/vmdlxxx.tmp/base.apk
+            ret = imcs.copyPackage(origin.file.getAbsolutePath(), target);
+            if (ret != PackageManager.INSTALL_SUCCEEDED) {
+                Slog.e(TAG, "Failed to copy package");
+                return ret;
+            }    
+            
+            //提取APK中的SO动态库文件到/data/app/vmdlxxx.tmp/lib目录
+            final File libraryRoot = new File(codeFile, LIB_DIR_NAME);
+            NativeLibraryHelper.Handle handle = null;
+            try {
+                handle = NativeLibraryHelper.Handle.create(codeFile);
+                ret = NativeLibraryHelper.copyNativeBinariesWithOverride(handle, libraryRoot,
+                        abiOverride);
+            } catch (IOException e) {
+                Slog.e(TAG, "Copying native libraries failed", e);
+                ret = PackageManager.INSTALL_FAILED_INTERNAL_ERROR;
+            } finally {
+                IoUtils.closeQuietly(handle);
+            }
+            return ret;
 ```
+不知道是不是我想的太简单了，我觉得不就是创建个临时目录，复制个文件，解压个文件而已吗，为什么要搞得这么复杂？又是远程服务调用，又是native调用的。
+至此，复制APK的步骤已经完成了，成果就是在 `data/app`目录下新建了一个临时目录`vmdlxxx.tmp`，将原始的APK文件复制到这个临时目录命名为`base.apk`，并将APK中的动态库文件提取到这个`/data/app/vmdlxxx.tmp/lib`目录。这些操作一切正常的话，就返回上层调用，继续安装步骤。下面流程回到`HandlerParams.startCopy()`中，接下来调用了`InstallParams.handleReturnCode();`根据复制APK的结果进行处理，这个方法只是调用了`processPendingInstall`来干活而已：
+```java
+    private void processPendingInstall(final InstallArgs args, final int currentStatus) {
+        // Queue up an async operation since the package installation may take a little while.
+        mHandler.post(new Runnable() {
+            public void run() {
+            ......
+            if (res.returnCode == PackageManager.INSTALL_SUCCEEDED) {
+                    args.doPreInstall(res.returnCode);
+                    synchronized (mInstallLock) {
+                        installPackageLI(args, res);
+                    }
+                    args.doPostInstall(res.returnCode, res.uid);
+            }
+            //接下来是一些备份工作，在此我们不关注
+            ......
+            Message msg = mHandler.obtainMessage(POST_INSTALL, token, 0);
+            mHandler.sendMessage(msg);                
+```
+这个方法调用了`FileInstallArgs.doPreInstall`做些准备工作， `installPackageLI`开始安装，`FileInstallArgs.doPostInstall`扫尾工作。最后再发了一个`POST_INSTALL`消息出来。`doPostInstall`只是清理上一步骤创建的临时目录而已，不需要过多分析，下面我们来分析`installPackageLI`：
+```java
+        //提取安装参数
+        ......
+        //解析APK文件
+        final int parseFlags = mDefParseFlags | PackageParser.PARSE_CHATTY
+                | (forwardLocked ? PackageParser.PARSE_FORWARD_LOCK : 0)
+                | (onSd ? PackageParser.PARSE_ON_SDCARD : 0);
+        PackageParser pp = new PackageParser();
+        pp.setSeparateProcesses(mSeparateProcesses);
+        pp.setDisplayMetrics(mMetrics);
 
-未完待续
+        final PackageParser.Package pkg;
+        try {
+            pkg = pp.parsePackage(tmpPackageFile, parseFlags);
+        } catch (PackageParserException e) {
+            res.setError("Failed parse during installPackageLI", e);
+            return;
+        }
+        //签名验证
+        ......
+        //APK是否安装过
+        ......
+        
+        if (!args.doRename(res.returnCode, pkg, oldCodePath)) {
+            res.setError(INSTALL_FAILED_INSUFFICIENT_STORAGE, "Failed rename");
+            return;
+        }
+
+        if (replace) {
+            replacePackageLI(pkg, parseFlags, scanFlags | SCAN_REPLACING, args.user,
+                    installerPackageName, res);
+        } else {
+            installNewPackageLI(pkg, parseFlags, scanFlags | SCAN_DELETE_DATA_ON_FAILURES,
+                    args.user, installerPackageName, res);
+        }
+        synchronized (mPackages) {
+            final PackageSetting ps = mSettings.mPackages.get(pkgName);
+            if (ps != null) {
+                res.newUsers = ps.queryInstalledUsers(sUserManager.getUserIds(), true);
+            }
+        }
+    }
+```
