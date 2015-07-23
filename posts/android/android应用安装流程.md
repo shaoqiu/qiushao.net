@@ -1,6 +1,6 @@
 android应用安装流程
 ------
-**create time: 2015-07-17; update time: 2015-07-21**
+**create time: 2015-07-17; update time: 2015-07-23**
 
 ---------------------------------------------------------------
 
@@ -321,3 +321,256 @@ WTFC，绕来绕去，绕了这么一大个圈。
         }
     }
 ```
+首先使用`PackageParser.parsePackage`来解析APK文件，得到一个 `PackageParser.Package pkg`对象。解析APK，其实就是使用 XML 解析器去解析 `AndroidManifest.xml`文件而已。最终调用了`parseBaseApk(Resources res, XmlResourceParser parser, int flags, String[] outError)`方法来解析：
+```java
+    private Package parseBaseApk(Resources res, XmlResourceParser parser, int flags,
+            String[] outError) throws XmlPullParserException, IOException {
+        final boolean trustedOverlay = (flags & PARSE_TRUSTED_OVERLAY) != 0;
+        ......
+        while ((type = parser.next()) != XmlPullParser.END_DOCUMENT
+                && (type != XmlPullParser.END_TAG || parser.getDepth() > outerDepth)) {
+            if (type == XmlPullParser.END_TAG || type == XmlPullParser.TEXT) {
+                continue;
+            }
+
+            String tagName = parser.getName();
+            if (tagName.equals("application")) {
+                if (foundApp) {
+                    if (RIGID_PARSER) {
+                        outError[0] = "<manifest> has more than one <application>";
+                        mParseError = PackageManager.INSTALL_PARSE_FAILED_MANIFEST_MALFORMED;
+                        return null;
+                    } else {
+                        Slog.w(TAG, "<manifest> has more than one <application>");
+                        XmlUtils.skipCurrentTag(parser);
+                        continue;
+                    }
+                }
+
+                foundApp = true;
+                if (!parseBaseApplication(pkg, res, parser, attrs, flags, outError)) {
+                    return null;
+                }
+            } else if (tagName.equals("overlay")) {
+                pkg.mTrustedOverlay = trustedOverlay;
+                ......
+            } else if (tagName.equals("key-sets")) {
+                if (!parseKeySets(pkg, res, parser, attrs, outError)) {
+                    return null;
+                }
+            } else if (tagName.equals("permission-group")) {
+                if (parsePermissionGroup(pkg, flags, res, parser, attrs, outError) == null) {
+                    return null;
+                }
+            } else if (tagName.equals("permission")) {
+                if (parsePermission(pkg, res, parser, attrs, outError) == null) {
+                    return null;
+                }
+            } else if (tagName.equals("permission-tree")) {
+                if (parsePermissionTree(pkg, res, parser, attrs, outError) == null) {
+                    return null;
+                }
+            } else if (tagName.equals("uses-permission")) {
+                if (!parseUsesPermission(pkg, res, parser, attrs, outError)) {
+                    return null;
+                }
+            } else if (tagName.equals("uses-configuration")) {
+            .......
+                
+```
+我们看到`application`标签，这个标签里面包含了`activity`，`service`，`provider`，`broacast`等标签。我们跟进`parseBaseApplication`函数里面，就会发现里面对这些标签进行了解析：
+```java
+        while ((type = parser.next()) != XmlPullParser.END_DOCUMENT
+                && (type != XmlPullParser.END_TAG || parser.getDepth() > innerDepth)) {
+            if (type == XmlPullParser.END_TAG || type == XmlPullParser.TEXT) {
+                continue;
+            }
+
+            String tagName = parser.getName();
+            if (tagName.equals("activity")) {
+                Activity a = parseActivity(owner, res, parser, attrs, flags, outError, false,
+                        owner.baseHardwareAccelerated);
+                if (a == null) {
+                    mParseError = PackageManager.INSTALL_PARSE_FAILED_MANIFEST_MALFORMED;
+                    return false;
+                }
+
+                owner.activities.add(a);
+
+            } else if (tagName.equals("receiver")) {
+                Activity a = parseActivity(owner, res, parser, attrs, flags, outError, true, false);
+                if (a == null) {
+                    mParseError = PackageManager.INSTALL_PARSE_FAILED_MANIFEST_MALFORMED;
+                    return false;
+                }
+
+                owner.receivers.add(a);
+
+            } else if (tagName.equals("service")) {
+                Service s = parseService(owner, res, parser, attrs, flags, outError);
+                if (s == null) {
+                    mParseError = PackageManager.INSTALL_PARSE_FAILED_MANIFEST_MALFORMED;
+                    return false;
+                }
+
+                owner.services.add(s);
+
+            } else if (tagName.equals("provider")) {
+                Provider p = parseProvider(owner, res, parser, attrs, flags, outError);
+                if (p == null) {
+                    mParseError = PackageManager.INSTALL_PARSE_FAILED_MANIFEST_MALFORMED;
+                    return false;
+                }
+
+                owner.providers.add(p);
+                ......
+```
+最终将解析出来的`activity`， `service`等组件保存到`Package.activities`，`Package.services`等数组中。具体的解析细节我们就不过多关注了。我们返回到`installPackageLI`中，接下来进行签名信息的检验，判断APK是否安装过，这些过程我们就忽略了。然后调用了`args.doRename`将临时目录重命名为`包名-x`，其中`x >= 1`。最终调用了`installNewPackageLI`进一步安装：
+```java
+    private void installNewPackageLI(PackageParser.Package pkg,
+            int parseFlags, int scanFlags, UserHandle user,
+            String installerPackageName, PackageInstalledInfo res) {
+            ......
+            PackageParser.Package newPackage = scanPackageLI(pkg, parseFlags, scanFlags,
+                    System.currentTimeMillis(), user);
+
+            updateSettingsLI(newPackage, installerPackageName, null, null, res);
+            ......
+```
+调用`scanPackageLI`干活，`scanPackageLI`又调用了`scanPackageDirtyLI`去真正的干活：
+```java
+    private PackageParser.Package scanPackageDirtyLI(PackageParser.Package pkg, int parseFlags,
+            int scanFlags, long currentTime, UserHandle user) throws PackageManagerException {
+        final File scanFile = new File(pkg.codePath);
+        ......
+        File destCodeFile = new File(pkg.applicationInfo.getCodePath());
+        File destResourceFile = new File(pkg.applicationInfo.getResourcePath());
+        ......
+        dataPath = getDataPathForPackage(pkg.packageName, 0);
+        ......
+        //invoke installer to do the actual installation
+        int ret = createDataDirsLI(pkgName, pkg.applicationInfo.uid,
+                                           pkg.applicationInfo.seinfo);
+        ......
+        setNativeLibraryPaths(pkg);
+        ......
+        handle = NativeLibraryHelper.Handle.create(scanFile);
+        ......
+        copyRet = NativeLibraryHelper.copyNativeBinariesForSupportedAbi(handle,
+                                nativeLibraryRoot, abiList, useIsaSpecificSubdirs);
+        ......
+        setNativeLibraryPaths(pkg);
+        ......
+        mInstaller.linkNativeLibraryDirectory(pkg.packageName, nativeLibPath, userId)
+        ......
+
+        // writer
+        synchronized (mPackages) {
+            // We don't expect installation to fail beyond this point
+
+            // Add the new setting to mSettings
+            mSettings.insertPackageSettingLPw(pkgSetting, pkg);
+            // Add the new setting to mPackages
+            mPackages.put(pkg.applicationInfo.packageName, pkg);
+            ......
+            int N = pkg.providers.size();
+            StringBuilder r = null;
+            int i;
+            for (i=0; i<N; i++) {
+                PackageParser.Provider p = pkg.providers.get(i);
+                p.info.processName = fixProcessName(pkg.applicationInfo.processName,
+                        p.info.processName, pkg.applicationInfo.uid);
+                mProviders.addProvider(p);
+            ......
+            N = pkg.services.size();
+            r = null;
+            for (i=0; i<N; i++) {
+                PackageParser.Service s = pkg.services.get(i);
+                s.info.processName = fixProcessName(pkg.applicationInfo.processName,
+                        s.info.processName, pkg.applicationInfo.uid);
+                mServices.addService(s);
+            ......
+            N = pkg.activities.size();
+            r = null;
+            for (i=0; i<N; i++) {
+                PackageParser.Activity a = pkg.activities.get(i);
+                a.info.processName = fixProcessName(pkg.applicationInfo.processName,
+                        a.info.processName, pkg.applicationInfo.uid);
+                mActivities.addActivity(a, "activity");
+            ......
+            
+```
+这个方法做了很多工作，先创建 APK 的 data 目录，然后将APK的资源文件，动态库等文件提取到 data 目录，并做相应的配置。最后将在`AndroidManifest.xml`中收集到的四大组件及其他的信息增加到`PackageManagerService`的成员变量`mActivities`，`mServices`，`providers`，`mPermissionGroups`中。其实`PackageManagerService`在启动时会读`/data/system/package.xml`文件对上面这些成员变量进行初始化。当需要启动 Activity 等组件时，就会从这些成员变量中寻找相应的信息。下一步就是将新增APK的信息写入到`/data/system/package.xml`文件中：
+```java
+    private void updateSettingsLI(PackageParser.Package newPackage, String installerPackageName,
+            int[] allUsers, boolean[] perUserInstalled,
+            PackageInstalledInfo res) {
+            ......
+            synchronized (mPackages) {
+            //write settings. the installStatus will be incomplete at this stage.
+            //note that the new package setting would have already been
+            //added to mPackages. It hasn't been persisted yet.
+            mSettings.setInstallStatus(pkgName, PackageSettingBase.PKG_INSTALL_INCOMPLETE);
+            mSettings.writeLPr();
+        }
+        ......
+            mSettings.setInstallStatus(pkgName, PackageSettingBase.PKG_INSTALL_COMPLETE);
+            mSettings.setInstallerPackageName(pkgName, installerPackageName);
+            res.returnCode = PackageManager.INSTALL_SUCCEEDED;
+            //to update install status
+            mSettings.writeLPr();
+            
+```
+主要是调用了`mSettings.writeLPr();`方法来保存数据：
+```java
+    void writeLPr() {
+        ......
+        try {
+            FileOutputStream fstr = new FileOutputStream(mSettingsFilename);
+            BufferedOutputStream str = new BufferedOutputStream(fstr);
+
+            //XmlSerializer serializer = XmlUtils.serializerInstance();
+            XmlSerializer serializer = new FastXmlSerializer();
+            serializer.setOutput(str, "utf-8");
+            serializer.startDocument(null, true);
+```
+`mSettingsFilename = "/data/system/package.xml"` ，就是使用`XmlSerializer`来生成`xml`文件而已。过程就不具体讲解了。不过我们注意到`mSettings.writeLPr()`被调用了两次。第一次调用前设置了`PackageSettingBase.PKG_INSTALL_INCOMPLETE`状态，说明APK还未安装完成，还不可用。第二次调用前设置了`PackageSettingBase.PKG_INSTALL_COMPLETE`状态，说明APk已经安装完成，可以使用了。这个状态标志在`writeLPr()`会读取，并作相应的处理：
+```java
+        if (pkg.installStatus == PackageSettingBase.PKG_INSTALL_INCOMPLETE) {
+            serializer.attribute(null, "installStatus", "false");
+        }
+```
+
+至此，一个应用的安装可以说是已经完成了。我们回到`processPendingInstall`方法中，接下来调用了`args.doPostInstall(res.returnCode, res.uid);`进行一些清理工作：
+```java
+        int doPostInstall(int status, int uid) {
+            if (status != PackageManager.INSTALL_SUCCEEDED) {
+                cleanUp();
+            }
+            return status;
+        }
+```
+`cleanUp()`只是删除一些临时文件而已，不多作解析。`processPendingInstall`在最后发了一个`POST_INSTALL`消息出来。这样流程就转到`doHandleMessage`中了，我们看看`POST_INSTALL`消息处理分支：
+```java
+                case POST_INSTALL: {
+                    if (DEBUG_INSTALL) Log.v(TAG, "Handling post-install for " + msg.arg1);
+                    PostInstallData data = mRunningInstalls.get(msg.arg1);
+                    mRunningInstalls.delete(msg.arg1);
+                    ......
+                    //发Intent.ACTION_PACKAGE_REMOVED广播
+                    res.removedInfo.sendBroadcast(false, true, false);
+                    ......
+                    //发Intent.ACTION_PACKAGE_ADDED广播
+                    sendPackageBroadcast(Intent.ACTION_PACKAGE_ADDED,
+                                    res.pkg.applicationInfo.packageName,
+                                    extras, null, null, firstUsers);
+                    ......
+                    //最后通知安装请求者，安装已经完成了
+                    args.observer.onPackageInstalled(res.name, res.returnCode,
+                                        res.returnMsg, extras);
+```
+至此，一个应用的所有安装流程已经走完了。系统继续查看安装任务队列，如果还有任务则执行下一个安装任务。
+
+整个安装流程非常复杂，这里只是提取了一个主线来分析而已，还有很细枝末节的工作被忽略掉了。当遇到具体问题时，再详细跟踪分析细节问题就可以了。
+
+应用已经安装完了，但系统是怎么启动一个应用的呢，下一往篇文章再具体分析。
