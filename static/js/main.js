@@ -24,6 +24,8 @@ function click_edit() {
     document.getElementById("markdown_preview").style.display = "none";
     document.getElementById("markdown_edit").style.display = "block";
     document.getElementById("top_button").style.display = "none";
+    document.getElementById("comment-box").style.display = "none";
+
 }
 
 function click_preview() {
@@ -33,6 +35,7 @@ function click_preview() {
     document.getElementById("markdown_preview").style.display = "block";
     document.getElementById("markdown_edit").style.display = "none";
     document.getElementById("top_button").style.display = "block";
+    document.getElementById("comment-box").style.display = "block";
 }
 
 function click_del() {
