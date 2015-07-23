@@ -5,7 +5,6 @@ import tornado.httpserver
 import tornado.ioloop
 import tornado.web
 import website
-import multiprocessing
 
 def genSite(status):
     site = website.WebSite(status)
@@ -17,13 +16,16 @@ def genSite(status):
         files = os.listdir(os.path.join(posts, tag))
         if len(files) > 0:
             site.tags.append(tag)
-            for post in files:
-                post = os.path.splitext(post)[0]
-                site.posts.append(os.path.join(posts, tag, post))
+            for postfile in files:
+                post = website.Post()
+                post.title = os.path.splitext(postfile)[0]
+                post.tag = tag
+                post.url = os.path.join(site.url, posts, tag, post.title) + ".html"
+                site.posts.append(post)
     # tag 按字典序排序
     site.tags.sort()
     # 文章按修改时间排序
-    site.posts.sort(key=lambda post:os.stat(post + ".md").st_ctime, reverse=True)
+    site.posts.sort(key=lambda post:os.stat(os.path.join(posts, post.tag, post.title) + ".md").st_ctime, reverse=True)
     return site
 
 
