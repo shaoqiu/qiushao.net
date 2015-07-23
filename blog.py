@@ -1,15 +1,9 @@
 __author__ = "shaoqiu"
 
-import os
 import tornado.template
 import website
 
-website = website.WebSite("read")
-for parent, dirlist, filelist in os.walk("posts"):
-    website.tags.extend(dirlist)
-    for post in filelist:
-        post = os.path.splitext(post)[0]
-        website.posts.append(os.path.join(parent, post))
+site = website.genSite("read")
 
 loader = tornado.template.Loader("templates")
 
