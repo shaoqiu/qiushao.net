@@ -1,6 +1,6 @@
 gradle使用
 ------
-**create time: 2015-07-23; update time: 2015-07-23**
+**create time: 2015-07-23; update time: 2015-07-24**
 
 ---------------------------------------------------------------
 
@@ -244,3 +244,9 @@ compile fileTree(dir: 'libs', include: ['*.jar'])
 如果不行的话，右击这个 jar 文件件，选择 "add as library"就可以了。
 
 #### 5.2. 引用远程仓库的library
+这个更简单了，只要在模块的构建脚本中加入一行配置即可。比如我们要加入 Android-Universal-Image-Loader 库，则只要加入下面这行配置即可：
+```
+compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.4'
+```
+我们需要使用哪个组件，先去它的官网查看配置方法，看看是否支持这种配置方式。
+gradle会自动去下载相应的库文件。当然这种方式要求这个库已经上传到中央仓库了。目前很多开源的组件都已经上传到gradle的中央仓库了。不过这种方式比较依赖网络。
