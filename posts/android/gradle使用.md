@@ -147,8 +147,100 @@ gradle.taskGraph.whenReady {taskGraph ->
 ```
 
 ### 3. 构建java工程
-通过上面的例子，我们大概了解了工程，任务的概念。不过上面的例子中我们只是单纯的输出而已，并没有进行编译，打包，发布的实际工作。下面我们就来使用gradle构建一个java工程。在这个工程上演示各种实际用法。
+通过上面的例子，我们大概了解了工程，任务的概念。不过上面的例子中我们只是单纯的输出而已，并没有进行编译，打包，发布的实际工作。下面我们就来使用gradle构建一个工程。在这个工程上演示各种实际用法。
 
-#### 3.1. 
+#### 3.1. 在android-studio上构建可执行的java程序
+我看其他教程都是教用户在命令行的干活，自己手动创建工程目录结构，全手动编写构建脚本，不知道他们是不是也不使用IDE来写 java 代码，我真是醉了。。。
+下面我们还是研究研究在android-stuidio上怎么构建可执行的java程序吧。后面的例子也全都是在android-studio上完成的。
 
-### 4. 构建android工程
+新建一个工程`JavaTest`，在 android-studio中建立的工程都必须是android工程，没有纯 java 工程。我们就按它的来，先创建一个android工程。创建好工程之后：默认的结构是这样的：<br/>
+![默认工程结构](http://i1.tietuku.com/a018ac5b050028e9.png)
+<br/>
+我们发现里面有两个`build.gradle`文件，一个`settings.gradle`文件。android-studio中工程的概念跟eclipse有点区别。它更像eclipse中的workspace概念。在android-studio中，一个工程（project）可以包含一个或多个模块（module）。工程的 build.gradle 定义了所有模块共用的编译规则，一般情况下我们不需要修改。settings.gradle 中列举了需要构建的模块。每一个模块下面都有一个自己的 build.gradle 构建脚本。
+app 模块我们可以先不去管它，下面我们增加自己的纯java模块。
+
+#### 3.2. 增加 Module
+file --> new --> new module ，然后选择 java library：
+<br/>
+![新建java library模块](http://i3.tietuku.com/a458a3fc47d3f29d.png)
+<br/>
+然后修改模块名，包名，类名如下：
+![修改模块信息](http://i3.tietuku.com/82730088bd295b55.png)
+
+新模块创建好了，我们发现多了一个build.gradle文件，这个文件就是我们新模块的构建脚本。还多了一个 `hello`目录。再看 settings.gradle，里面也增加了刚才创建的新模块。
+下面就让我们新建的模块可以像普通java程序一样跑起来。
+修改`Hello.java`文件，增加`main`方法：
+```java
+package net.qiushao;
+
+public class Hello {
+    public static void main(String[] args) {
+        System.out.println("hello android studio");
+    }
+}
+```
+修改hello模块的build.gradle如下：
+```
+apply plugin: 'java'
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'net.qiushao.Hello'
+    }
+}
+```
+然后再 build --> make module hello 。就能编译生成一个可执行的jar文件了。生成的文件在JavaTest\hello\build\libs 目录，我们用 CMD 进入这个目录，执行命令：
+```
+D:\project\android-studio\JavaTest\hello\build\libs>java -jar hello.jar
+hello android studio
+
+D:\project\android-studio\JavaTest\hello\build\libs>
+```
+我们新建的模块是能运行起来了，但是为什么不能在android-studio中直接运行，还要跑到CMD去执行，太麻烦了。当然也可以直接在android-studio中运行。不过构建脚本要做些修改：
+```
+apply plugin: 'java'
+apply plugin: 'application'
+mainClassName = "net.qiushao.Hello"
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'net.qiushao.Hello'
+    }
+}
+```
+我们加了两行，增加了一个插件`application`，指定了入口类`net.qiushao.Hello`。其实`application`中已经包含有了`java`插件的功能。关于这两个plugin的解释，详见官方文档[plugin java](https://docs.gradle.org/current/userguide/java_plugin.html)，[plugin application](https://docs.gradle.org/current/userguide/application_plugin.html)。
+然后右击`Hello.java`文件，选择`Run Hello.main()`。程序就运行起来了。
+
+
+### 4. 模块间依赖
+现在我们的工程中已经有两个模块了`app`，`hello`。假如`hello`模块是作为一个库供`app`模块调用的，我们要怎样设置才能在`app`模块中调用`hello`模块中的类呢？很简单，只要在`app`模块的 build.gradle文件中加入以下配置就可以了：
+```
+dependencies {
+    compile project(':hello')
+}
+```
+
+### 5. 引用第三方library
+#### 5.1. 引用本地library
+假如第三方给我们提供了一个 jar 包，那我们怎么把这个 jar 包加入到我们的工程中呢？
+android-studio中的视图比较多，感觉特别乱。。。
+首先我们需要切换到`project`视图：
+<br/>
+![project视图](http://i3.tietuku.com/8af1df26b4ab7fd4.png)
+<br/>
+这个视图才会显示真实的目录结构。但android-studio默认的视图是 `android` ，我找了大半天，发现居然没有显示libs 目录。。。
+最新版本的android-studio，只要我们将 jar 文件放到 libs目录，然后刷新一个工程就可以了。因为在构建脚本中有如下配置：
+```
+compile fileTree(dir: 'libs', include: ['*.jar'])
+```
+如果不行的话，右击这个 jar 文件件，选择 "add as library"就可以了。
+
+#### 5.2. 引用远程仓库的library
