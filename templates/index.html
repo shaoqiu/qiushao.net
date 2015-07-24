@@ -21,7 +21,11 @@
     </script>
     <script src="http://static.duoshuo.com/embed.js"></script>
     <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");
-    document.write(unescape("%3Cspan id='cnzz_stat_icon_1255850137'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1255850137%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script>
+    document.write(unescape("%3Cspan id='cnzz_stat_icon_1255850137'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s11.cnzz.com/z_stat.php%3Fid%3D1255850137%26show%3Dpic1' type='text/javascript'%3E%3C/script%3E"));</script>
+    <script>
+        var _czc = _czc || [];
+        _czc.push(["_setAccount", "1255850137"]);
+    </script>
 
 </head>
 <body onload="onload()">
@@ -56,7 +60,9 @@
         <div id="posts">
             <ul id="posts_ul">
                 {% for post in site.posts %}
-                <li class="posts_li" data-filter="{{ escape(post.tag) }}"><span class="pl_circle"></span>{{ post.title }}</li>
+                <li class="posts_li" data-filter="{{ escape(post.tag) }}"><span class="pl_circle"></span>{{ post.title
+                    }}
+                </li>
                 {% end %}
             </ul>
         </div>

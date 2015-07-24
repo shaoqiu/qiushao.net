@@ -184,6 +184,7 @@ function onload() {
         if (isMobile()) {
             $("#sidebar").addClass("fullscreen");
         }
+        _czc.push([ "_trackPageview", "/article?tag=" + tag + "&title=" + title]);
     });
 
     request_markdown("", "about");
