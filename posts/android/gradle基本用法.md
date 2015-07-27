@@ -1,4 +1,4 @@
-gradle使用
+gradle 基本用法
 ------
 **create time: 2015-07-23; update time: 2015-07-27**
 
