@@ -205,3 +205,11 @@ mRecyclerView.setLayoutManager(new GridLayoutManager(this, 10, GridLayoutManager
 <br/>
 ![RecyclerView Demo](http://i3.tietuku.com/839ea803a9a6a49a.png)
 <br/>
+
+### 4. 事件监听
+与 ListView 不一样，RecyclerView 没有 setOnItemClickListener 方法。也就是说我们得自己给每个 View 绑定监听器。具体的方法，就看个人喜好了。
+
+### 5. 分隔线
+由于布局的方式是不固定的，所以 RecyclerView 并不支持 android:divider="" 属性。而是需要我们通过 RecyclerView.addItemDecoration(ItemDecoration)方法去动态设置。但官方也并没有默认的ItemDecoration实现。所以想要设置分隔线的话得自己去实现一个ItemDecoration。感觉这种方法比较麻烦，上面的例子中，只是设置了Item 的边距而已。
+
+RecyclerView 的基本用法就这些了，后面再深入地去探讨。
