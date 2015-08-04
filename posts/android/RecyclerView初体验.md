@@ -1,6 +1,6 @@
 RecyclerView初体验
 ------
-**create time: 2015-08-03; update time: 2015-08-03**
+**create time: 2015-08-03; update time: 2015-08-04**
 
 ---------------------------------------------------------------
 
@@ -28,7 +28,7 @@ ListView，GridView 也是可以使用回收重复利用View的。 它们都是�
 下面来举几个例子来演示一下RecyclerView灵活，强大的功能。例子基于 android-studio 完成。
 
 #### 3.1. 导入包
-RecyclerView 虽说是在android L中增加的，但它是以support library 的形式提供的，所以我们可以在低版本的系统中使用。在 android-studio中只需要在模块的构建脚本 build.gradle 中加入以下配置即可：
+RecyclerView 虽说是在android L中增加的，但它是以support library 的形式提供的，所以我们可以在低版本的系统中使用。在 android-studio中只需要在模块的构建脚本 build.gradle 中加入以下依赖配置即可：
 ```
 compile 'com.android.support:recyclerview-v7:22.+'
 ```
@@ -165,4 +165,43 @@ public class MainActivity extends Activity {
 }
 ```
 
-至此，一个最简单的RecyclerView的Demo就已经完成了。
+至此，一个最简单的RecyclerView的Demo就已经完成了。让我们来运行一下看看效果。
+<br/>
+![RecyclerView Demo](http://i3.tietuku.com/87d09055d2ed5524.png)
+<br/>
+
+使用的步骤跟ListView也是差不多的。 前面说过了，这货比ListView强大多了，下面我们来演示一下，它是如何强大。
+
+#### 3.5. 水平列表
+前面我们使用的是垂直列表的布局方式：
+```java
+mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+```
+LinearLayoutManager 为线性布局，在不指定布局方向的情况下，默认为垂直方向。我们可以给它指定为水平方向，这样就可以达到水平 ListView 的效果了：
+```java
+mRecyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+```
+使用 LinearLayoutManager.HORIZONTAL 指定水平排列。效果如下：
+<br/>
+![RecyclerView Demo](http://i3.tietuku.com/19f5c0d5432b3c87.png)
+<br/>
+
+#### 3.6. 网格布局
+如果我们想要实现像GridView那样的网格布局也挺简单，换个LayoutManager就可以了：
+```java
+mRecyclerView.setLayoutManager(new GridLayoutManager(this, 10));
+```
+
+效果如下：
+<br/>
+![RecyclerView Demo](http://i3.tietuku.com/472c9efa5e9e9a27.png)
+<br/>
+跟LinearLayoutManager 一样，GridLayoutManager 也可以指定元素的排列方向，默认是水平方向排列优先，垂直方向滚动。
+下面我们换个方向看看是什么效果：
+```java
+mRecyclerView.setLayoutManager(new GridLayoutManager(this, 10, GridLayoutManager.HORIZONTAL, false));
+```
+效果如下：
+<br/>
+![RecyclerView Demo](http://i3.tietuku.com/839ea803a9a6a49a.png)
+<br/>
