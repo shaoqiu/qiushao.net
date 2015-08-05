@@ -25,15 +25,118 @@ android 提供了下面这几种布局管理器：
 
 ### 2. LinearLayout
 #### 2.1. 相关属性
-- baselineAligned 
-- baselineAlignedChildIndex
-- gravity
-- measureWithLargestChild
-- orientation
-- weightSum
+- baselineAligned ：设置文字的基准线对齐，什么是基准线呢？这个在中文中不常见，但在以字母为书写语言的其他国家非常常见。看下图即可明白：
+<br/>
+![](http://i1.tietuku.com/1b8ff2b0c71d5de7.png)
+<br/>
+其实就是我们英文作业本上的四线中的第三条线是一个道理。设置这个属性后，这个容器里的所有子视图的文字都会对齐到这个容器的基准线上。这个属性只对水平布局有效。
+- baselineAlignedChildIndex：指当前layout是 以哪个view的基准线与其他的View进行对齐。
+- gravity：指定摆放子视图的位置，可以是 left , right, bottom, top 之类的，可以同时取多个值，用`|`来连接。
+- measureWithLargestChild：该属性为true的时候, 所有带权重的子元素都会具有最大子元素的最小尺寸。这个属性比较少用。
+- orientation：子视图排列方向，可以是水平或者垂直
+- weightSum：权重的总和，如果不设置，则为所有子视图的权重的累加值。这个属性也很少使用。
 
 #### 2.2. 简单例子
+```xml
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:background="#abcdef"
+        android:gravity="center_vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#ff0000"
+            android:text="textview1" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#00ff00"
+            android:text="textview2" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#0000ff"
+            android:text="textview3" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="20dp"
+        android:gravity="right|bottom"
+        android:background="#abcdef">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#ff0000"
+            android:text="textview1" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#00ff00"
+            android:text="textview2" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="#0000ff"
+            android:text="textview3" />
+    </LinearLayout>
+</LinearLayout>
+```
+效果如下：
+<br/>
+![simple linear layout](http://i3.tietuku.com/b2b582c3af84826d.png)
+<br/>
+布局比较简单，就不详细说明了。
+
 #### 2.3. weight 属性
+假如我想实现这样的一个标题栏：左边有一个元素固定宽度，右边也有一个元素固定宽度，中间有一个元素充满剩余的空间。该怎么实现呢？我们可以通过设置子视图的 weight 属性来解决这个问题：
+```xml
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="40dp"
+    android:background="#abcdef"
+    android:orientation="horizontal"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="#ff0000"
+        android:gravity="center"
+        android:text="textview1" />
+
+    <TextView
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="#00ff00"
+        android:gravity="center"
+        android:text="textview2" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:background="#0000ff"
+        android:gravity="center"
+        android:text="textview3" />
+</LinearLayout>
+```
+layout_weight值表示该组件应该增加或减少的值占**剩余空间**的比例。需要特别说明的是`剩余空间`。即容器没有被子视图填满，那这部分未被填满的空间会按比例分配给各子视图。将所有的子视图的weight 的值累加起来，得到的值(weightSum)即是剩余空间被等比例分成的份数。每个子视图占用 weight/weightSum 的比例。
+
+效果如下：
+<br/>
+![linear layout weight](http://i3.tietuku.com/4bc90a9cc47067ed.png)
+<br/>
 
 ### 3. RelativeLayout
 #### 3.1. 相关属性
