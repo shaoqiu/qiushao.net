@@ -140,8 +140,147 @@ layout_weight值表示该组件应该增加或减少的值占**剩余空间**的
 
 ### 3. RelativeLayout
 #### 3.1. 相关属性
-#### 3.2. 简单例子
-#### 3.3. 梅花布局
+```
+// 相对于给定ID控件
+android:layout_above 将该控件的底部置于给定ID的控件之上;
+android:layout_below 将该控件的底部置于给定ID的控件之下;
+android:layout_toLeftOf 将该控件的右边缘与给定ID的控件左边缘对齐;
+android:layout_toRightOf 将该控件的左边缘与给定ID的控件右边缘对齐;
+
+android:layout_alignBaseline 将该控件的baseline与给定ID的baseline对齐;
+android:layout_alignTop 将该控件的顶部边缘与给定ID的顶部边缘对齐;
+android:layout_alignBottom 将该控件的底部边缘与给定ID的底部边缘对齐;
+android:layout_alignLeft 将该控件的左边缘与给定ID的左边缘对齐;
+android:layout_alignRight 将该控件的右边缘与给定ID的右边缘对齐;
+// 相对于父组件
+android:layout_alignParentTop 如果为true,将该控件的顶部与其父控件的顶部对齐;
+android:layout_alignParentBottom 如果为true,将该控件的底部与其父控件的底部对齐;
+android:layout_alignParentLeft 如果为true,将该控件的左部与其父控件的左部对齐;
+android:layout_alignParentRight 如果为true,将该控件的右部与其父控件的右部对齐;
+```
+相对布局的核心思想就是对齐方式，给定一个参照物，这个参照物可以是其他兄弟视图或者父容器。我们通过属性指定视图相对于参照物的位置。其实也就是上下左右了。下面就举两个例子来看看RelativeLayout的使用方法。
+#### 3.2. 梅花布局
+```xml
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity">
+
+    <Button
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="top left" />
+
+    <Button
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="top rigth" />
+
+    <Button
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="bottom left" />
+
+    <Button
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="botton right" />
+
+
+    <Button
+        android:id="@+id/center"
+        android:layout_margin="10dp"
+        android:layout_centerInParent="true"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="center" />
+
+    <Button
+        android:text="center1"
+        android:layout_above="@id/center"
+        android:layout_toLeftOf="@id/center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:text="center2"
+        android:layout_above="@id/center"
+        android:layout_toRightOf="@id/center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:text="center3"
+        android:layout_below="@id/center"
+        android:layout_toLeftOf="@id/center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:text="center4"
+        android:layout_below="@id/center"
+        android:layout_toRightOf="@id/center"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+</RelativeLayout>
+```
+这个例子演示了相对父容器及相对兄弟视图的位置。屏幕四个角落的视图是相对父容器布局的，中间的几个视图组成的梅花视图使用的是相对兄弟视图布局的。
+其效果如下：
+<br/>
+![relative layout](http://i3.tietuku.com/b664221c5a714eee.png)
+<br/>
+#### 3.3. 海报布局
+我们在做视频相关的应用时，通常的设计是电影海报的下方叠加显示电影的标题信息。这种布局我们也可以用RelativeLayout来实现：
+```xml
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".MainActivity">
+    <RelativeLayout
+        android:layout_width="300dp"
+        android:layout_height="400dp"
+        android:layout_centerInParent="true">
+        <ImageView
+            android:id="@+id/image"
+            android:src="@mipmap/child"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#af000000" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="#af000000"
+            android:gravity="center"
+            android:text="朝花夕拾"
+            android:textColor="#ffffff"
+            android:textSize="32dp" />
+    </RelativeLayout>
+</RelativeLayout>
+```
+效果如下：
+<br/>
+![relative layout](http://i3.tietuku.com/af06112e37f2a370.png)
+<br/>
+在此使用了同事画的一幅图，特别怀念童年的感觉。
 
 ### 4. FrameLayout
 #### 4.1. 相关属性
