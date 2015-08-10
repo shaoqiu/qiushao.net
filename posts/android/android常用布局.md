@@ -1,6 +1,6 @@
 android常用布局
 ------
-**create time: 2015-08-04; update time: 2015-08-05**
+**create time: 2015-08-04; update time: 2015-08-10**
 
 ---------------------------------------------------------------
 
@@ -283,10 +283,131 @@ android:layout_alignParentRight 如果为true,将该控件的右部与其父控�
 在此使用了同事画的一幅图，特别怀念童年的感觉。
 
 ### 4. FrameLayout
+帧布局是android中功能最简单的布局，帧布局默认把所有的子视图都对齐到左上角，当然我们可以通过 layout_gravity 指定其他的对齐方式。帧布局只是把子视图按声明的先后顺序一层一层的叠加起来而已。下层的帧会被上层的帧给遮住。我们可以使用 bringChildToFront 方法
 #### 4.1. 相关属性
-#### 4.2. 简单例子
-#### 4.3. 霓虹灯
+- foreground：前景图像，这个图像是一直放在顶层的，不会被其他帧给覆盖
+- foregroundGravity：前景图像的位置
+- measureAllChildren：布尔型值，设置在onMeasure时，是否只布局 VISIBLE or INVISIBLE 的子视图，忽略 GONE 的子视图。默认为false， 因此，默认当一个子视图被设置为GONE时，则不会占据父容器的空间。但VISIBLE or INVISIBLE 还是会占据相应的空间的，只不过看不到而已。
+
+#### 4.2. 海报布局
+前一小节我们使用相对布局来实现电影海报的布局。其实使用FrameLayout也同样可以实现：
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:layout_gravity="center"
+        android:layout_width="300dp"
+        android:layout_height="400dp">
+
+        <ImageView
+            android:id="@+id/image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#af000000"
+            android:src="@mipmap/child" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:background="#af000000"
+            android:gravity="center"
+            android:text="朝花夕拾"
+            android:textColor="#ffffff"
+            android:textSize="32dp" />
+    </FrameLayout>
+</FrameLayout>
+```
+
+显示效果跟前一节用相对布局来实现是一样的。
+
 
 ### 5. GridLayout
+GridLayout 是在android4.0的时候引入的。在android4.0版本之前，如果想要达到网格布局的效果，首先可以考虑使用最常见的LinearLayout布局，但是这样产生一些问题：
+- 不能同时在X，Y轴方向上进行控件的对齐。
+- 当多层布局嵌套时会有性能问题。
+
+或者使用表格布局TabelLayout，这种方式会把包含的元素以行和列的形式进行排列，每行为一个TableRow对象，也可以是一个View对象，而在TableRow中还可以继续添加其他的控件，每添加一个子控件就成为一列。但是使用这种布局可能会出现不能将控件占据多个行或列的问题，而且渲染速度也不能得到很好的保证。
+
+为了解决这些问题，所以产生了网格布局。下面就简单的介绍一下网格布局的使用。
+
 #### 5.1. 相关属性
-#### 5.2. 简单例子
+- orientation ：元素排列方向，水平或垂直，默认为水平方向。网格布局中的元素并不需要指定在某行某列，加入的组件会按顺序由左至右、由上至下摆放。如果指定为垂直方向则由上至下，由左至右摆放。
+- rowCount：有多少行
+- columnCount：有多少列
+- useDefaultMargins：When set to true, tells GridLayout to use default margins when none are specified in a view's layout parameters. The default value is false.
+- rowOrderPreserved：When set to true, forces row boundaries to appear in the same order as row indices.
+- columnOrderPreserved：When set to true, forces column boundaries to appear in the same order as column indices. The default is true.
+
+
+#### 5.2. 计算器布局
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:columnCount="4"
+    android:orientation="horizontal"
+    android:rowCount="5">
+    <Button
+        android:id="@+id/one"
+        android:text="1" />
+    <Button
+        android:id="@+id/two"
+        android:text="2" />
+    <Button
+        android:id="@+id/three"
+        android:text="3" />
+    <Button
+        android:id="@+id/devide"
+        android:text="/" />
+    <Button
+        android:id="@+id/four"
+        android:text="4" />
+    <Button
+        android:id="@+id/five"
+        android:text="5" />
+    <Button
+        android:id="@+id/six"
+        android:text="6" />
+    <Button
+        android:id="@+id/multiply"
+        android:text="×" />
+    <Button
+        android:id="@+id/seven"
+        android:text="7" />
+    <Button
+        android:id="@+id/eight"
+        android:text="8" />
+    <Button
+        android:id="@+id/nine"
+        android:text="9" />
+    <Button
+        android:id="@+id/minus"
+        android:text="-" />
+    <Button
+        android:id="@+id/zero"
+        android:layout_columnSpan="2"
+        android:layout_gravity="fill"
+        android:text="0" />
+    <Button
+        android:id="@+id/point"
+        android:text="." />
+    <Button
+        android:id="@+id/plus"
+        android:layout_gravity="fill"
+        android:layout_rowSpan="2"
+        android:text="+" />
+    <Button
+        android:id="@+id/equal"
+        android:layout_columnSpan="3"
+        android:layout_gravity="fill"
+        android:text="=" />
+</GridLayout>
+```
+
+显示效果如下：
+![caculator](http://i3.tietuku.com/a9003c7f7929966d.png)
