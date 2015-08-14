@@ -1,6 +1,6 @@
 Android布局优化
 ------
-**create time: 2015-08-04; update time: 2015-08-14**
+**create time: 2015-08-14; update time: 2015-08-14**
 
 ---------------------------------------------------------------
 
@@ -286,3 +286,72 @@ Activity 的布局文件修改如下：
 可以发现，少了一层嵌套。为了尽量减少布局的嵌套，我们也是煞费苦心啊。
 
 ### 4. 使用ViewStub延迟加载
+ViewStub标签同include标签一样可以用来引入一个外部布局，不同的是，ViewStub引入的布局默认不会扩张，即既不会占用显示也不会占用位置，从而在解析layout时节省cpu和内存。ViewStub常用来引入那些默认不会显示，只在特殊情况下显示的布局，如进度布局、网络失败显示的刷新布局、信息出错出现的提示布局等。对ViewStub的inflate操作只能进行一次，因为inflate的时候是将其指向的布局文件解析inflate并替换掉当前ViewStub本身（由此体现出了ViewStub“占位符”性质），一旦替换后，此时原来的布局文件中就没有ViewStub控件了，因此，如果多次对ViewStub进行infalte，会出现错误信息：ViewStub must have a non-null ViewGroup viewParent。
+下面演示一下其使用方法。接着上面的工程，首先添加一下网络数据加载失败要显示的页面文件`network_error.xml`：
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/error_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:drawableTop="@mipmap/error"
+        android:text="数据加载失败" />
+
+    <Button
+        android:id="@+id/refresh"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/error_text"
+        android:text="重新加载" />
+</RelativeLayout>
+```
+
+Activity页面的而已修改如下：
+```xml
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp"
+    tools:context=".MainActivity">
+    ......
+        <ViewStub
+        android:id="@+id/network_error_viewstub"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout="@layout/network_error" />
+</RelativeLayout>
+```
+Activity 修改如下：
+```java
+package net.qiushao.qsandroidutils;
+
+......
+    private View networkErrorView;
+
+    private void showNetError() {
+        if (networkErrorView != null) {
+            networkErrorView.setVisibility(View.VISIBLE);
+            return;
+        }
+        ViewStub stub = (ViewStub) findViewById(R.id.network_error_viewstub);
+        networkErrorView = stub.inflate();
+        Button refresh = (Button) findViewById(R.id.refresh);
+    }
+
+    private void showNormal() {
+        if (networkErrorView != null) {
+            networkErrorView.setVisibility(View.GONE);
+        }
+    }
+}
+```
+
+在数据加载失败时，调用showNetError 显示加载失败提示。这看起来和设其为gone /visible 很相似，但二者有什么区别呢？毕竟设置 gone/visible比使用ViewSub简单一点。如果你看过 LayoutInflater.inflate 的源码就知道其中的区别了。其实我们设置一个view 的visibility 为 gone，这个view 也是一样会被解析的。假如这个view是一个容器，它里面还包含了很多子视图。那这个容器里面的子视图也是会被 inflate 的。而使用ViewStub，默认就不会去解析ViewStub视图指定的布局文件，只有在我们需要时，才去手动加载，ViewStub是一个轻量级的控件，消耗的资源比较少，从而节省了时间和内存。网络上有很多资料是说view的可见性设置为gone之后，就不会被解析了，这一点误人子弟了。在遇到疑问是还要看源码查找答案。正如Linus所言：“Read The Fucking Source Code!”
