@@ -8,11 +8,12 @@ android 开发中布局是最基本的，也是直接呈现给用户的。所以
 
 ### 1. 避免不必要的嵌套布局
 过多的布局嵌套会导致布局的解析变慢，渲染速度变慢，内存的占用增加。所以我们要避免不必要的布局嵌套。下面举两个例子来说明问题。
+#### 1.1. 使用View的自身属性android:drawable*
 假如需要实现下面这样的一个布局，你会怎样来实现呢？
 <br/>
 ![setting](http://i1.tietuku.com/91ce28abdcd40b00.png)
 <br/>
-最开始可能会这样子实现：
+一开始我是这样子实现的：
 ```xml
     <LinearLayout
         android:gravity="center"
@@ -41,6 +42,7 @@ android 开发中布局是最基本的，也是直接呈现给用户的。所以
 ```
 效果跟上面使用LinearLayout布局嵌套的方法是一样的。但我们只使用了一个TextView！
 
+#### 1.2. 尽量使用RelativeLayout代替LinearLayout
 再看另外一个例子：
 <br/>
 ![music](http://i1.tietuku.com/3d532187e823489e.png)
