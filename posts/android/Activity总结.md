@@ -26,161 +26,37 @@ Activity是android中四大组件之一，因为它负责控制界面的显示�
 
 - onDestroy：activity被销毁时被调用。有可能是用户自己调用finish手动销毁，也有可能是系统内存不足时自动销毁。我们可以通过 isFinishing 方法来区分这两种情况。需要注意的是，我们不应该在这个方法里面保存用户数据！这个方法是用来释放应用的资源的，比如说线程资源。onPause释放系统资源，onDestroy释放进程资源。但有可能系统会直接杀掉这个activity所在的进程，而不调用onDestroy方法。
 
+以上即为Activity的所有生命周期方法，这些生命周期方法的调用时机是确定的，每一种生命周期方法被调用，则说明这个Activity进入了某种状态。就像一个状态机的状态转换一样。
+此外，有几个回调方法，虽然不是生命周期，但与生命周期也是紧密相关的，顺便也提一下：
+
 - onWindowFocusChanged：在Activity窗口获得或失去焦点时被调用。获得焦点时在onResume后被调用，失去焦点时在onPause后被调用。这个方法最重要特性是，`它被调用时布局已经完成了，我们可以通过View.getWidth获取各视图的大小了`。在onResume的时候我们通过View.getWidth获取视图的大小是为0的。
 
-- onSaveInstanceState：(1)在Activity被覆盖或退居后台之后，系统资源不足将其杀死，此方法会被调用；(2)在用户改变屏幕方向时，此方法会被调用；(3)在当前Activity跳转到其他Activity或者按Home键回到主屏，自身退居后台时，此方法会被调用。第一种情况我们无法保证什么时候发生，系统根据资源紧张程度去调度；第二种是屏幕翻转方向时，系统先销毁当前的Activity，然后再重建一个新的，调用此方法时，我们可以保存一些临时数据；第三种情况系统调用此方法是为了保存当前窗口各个View组件的状态。onSaveInstanceState的调用顺序是在onPause之前。
+- onSaveInstanceState：是用来保存UI状态的，通常onSaveInstanceState()只适合用于保存一些临时性的状态，而onPause()适合用于数据的持久化保存。通过使用一个Bundle来保存UI的临时状态，以便在activity被杀掉，随后又被启动时恢复之前的状态。这个bundle在重建activity时会被传给onRestoreInstanceState和 onCreate方法。这个方法在用户按back键主动退出activity时是不会被调用的。
+如果我们没有覆写onSaveInstanceState()方法, 此方法的默认实现会自动保存activity中的某些状态数据, 比如activity中各种UI控件的状态.。android应用框架中定义的几乎所有UI控件都恰当的实现了onSaveInstanceState()方法,因此当activity被摧毁和重建时, 这些UI控件会自动保存和恢复状态数据. 比如EditText控件会自动保存和恢复输入的数据,而CheckBox控件会自动保存和恢复选中状态.开发者只需要为这些控件指定一个唯一的ID(通过设置android:id属性即可), 剩余的事情就可以自动完成了.如果没有为控件指定ID, 则这个控件就不会进行自动的数据保存和恢复操作。
 
-- onRestoreInstanceState：(1)在Activity被覆盖或退居后台之后，系统资源不足将其杀死，然后用户又回到了此Activity，此方法会被调用；(2)在用户改变屏幕方向时，重建的过程中，此方法会被调用。我们可以重写此方法，以便可以恢复一些临时数据。onRestoreInstanceState的调用顺序是在onStart之后。
-
-- onNewIntent：当有其他应用使用startActivity(Intent)方法来启动时，会被调用。
-
-- onActivityResult：使用startActivityForResult启动一个activity，启动的activity返回结果时，此方法被调用。
-
-后面几个回调并不属于生命周期方法，但它们与生命周期也是紧密相关的，所以也在此列出来。生命周期回调很容易理解，只要写两个activity，重写其中的生命周期方法，加上LOG，根据LOG就可以验证上面所说的各生命周期方法的调用时机了。在此就不多做演示了。
+- onRestoreInstanceState：activity被杀掉后，又重建时，该方法被调用，用以恢复被杀掉之前的状态。
 
 ### 2. 启动模式
 启动模式（launchMode）在多个Activity跳转的过程中扮演着重要的角色，它可以决定是否生成新的Activity实例，是否重用已存在的Activity实例，是否和其他Activity实例共用一个任务栈。Activity 有以下几种启动模式：
-- standard：默认的启动模式，不管有没有已存在的实例，都生成新的实例。
+- standard：默认的启动模式，不管三七二十一，每次启动都生成新的实例。系统中可能会有多个对应的activity实例。
 
-- singleTop：如果发现有对应的Activity实例正位于栈顶，则重复利用，不再生成新的实例。其他情况生成新的实例。栈顶唯一。
+- singleTop：如果在某个任务栈有对应的Activity实例正位于栈顶，则重复利用，不再生成新的实例。其他情况生成新的实例。系统中可能会有多个对应的activity实例。
 
-- singleTask：如果在栈中有对应的Activity实例，则将此Activity实例之上的其他实例全部出栈，使其位于栈顶。栈中唯一。
+- singleTask：如果在某个任务栈中有对应的Activity实例，则将此Activity实例之上的其他实例全部出栈（即销毁），使其位于栈顶。系统中只有一个对应的activity实例。
 
-- singleInstance：启用一个新的栈结构，将Acitvity放置于这个新的栈结构中，并保证不再有其他Activity实例进入。
-
-下面我们举几个例子来说明一下各启动模式。
-#### 2.1. standard
-修改MainActivity的布局文件如下：
-```xml
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
-    <Button
-        android:id="@+id/start_activityb"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="start ActivityB" />
-</RelativeLayout>
-```
-修改MainActivity.java文件如下：
-```java
-package net.qiushao.activitytest;
-......
-public class MainActivity extends Activity implements View.OnClickListener {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        findViewById(R.id.start_activityb).setOnClickListener(this);
-    }
-    @Override
-    public void onClick(View v) {
-        Intent intent = new Intent(this, ActivityB.class);
-        startActivity(intent);
-    }
-}
-```
-新建ActivityB，修改其布局文件如下：
-```xml
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
-    <Button
-        android:id="@+id/start_mainactivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="start MainActivity" />
-</RelativeLayout>
-```
-修改ActivityB.java文件如下：
-```java
-package net.qiushao.activitytest;
-......
-public class ActivityB extends Activity implements View.OnClickListener{
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_activity_b);
-        findViewById(R.id.start_mainactivity).setOnClickListener(this);
-    }
-    @Override
-    public void onClick(View v) {
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
-    }
-}
-```
-运行应用，我们从MainActivity中启动ActivityB，再从ActivityB中启动MainActivity。这时我们进入adb shell，查看一下任务栈`dumpsys activity activities`：
-<br/>
-![standard](http://i3.tietuku.com/e176e000fb8b8033.png)
-<br/>
-这里只截取了部分任务栈信息。我们发现任务栈里面同时存在两个不同的MainActivity实例。每一次按返回键销毁一个activity，我们需要按三次返回键才能回到home界面。这就是standard的工作方式。
-
-#### 2.2. singleTop
-接着上面的工程， 在AndroidManifest.xml中修改MainActivity的`android:launchMode=singleTop`。修改MainActivity的布局文件如下：
-```xml
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
-    <Button
-        android:id="@+id/start_mainactivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="start MainActivity" />
-    <Button
-        android:id="@+id/start_activityb"
-        android:layout_below="@id/start_mainactivity"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="start ActivityB" />
-</RelativeLayout>
-```
-修改MainActivity.java文件如下：
-```java
-package net.qiushao.activitytest;
-......
-public class MainActivity extends Activity implements View.OnClickListener {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        findViewById(R.id.start_activityb).setOnClickListener(this);
-        findViewById(R.id.start_mainactivity).setOnClickListener(this);
-    }
-    @Override
-    public void onClick(View v) {
-        if(v.getId() == R.id.start_activityb) {
-            Intent intent = new Intent(this, ActivityB.class);
-            startActivity(intent);
-        } else if (v.getId() == R.id.start_mainactivity){
-            Intent intent = new Intent(this, MainActivity.class);
-            startActivity(intent);
-        }
-    }
-}
-```
-运行应用，我们在MainActivity界面点击几次 start MainActivity，然后查看任务栈，发现栈中只有一个MainActivity。我们先启动ActivityB，然后从ActivityB中启动MainActivity，再查看任务栈：
-<br/>
-![singleTop](http://i3.tietuku.com/b5d5c134e74361c6.png)
-<br/>
-出现了两个MainActivity实例。
-再看另一种情况，我们按home键回到首页。此时MainActivity进入后台，但是仍然处于任·务栈t133的栈顶，我们从adb shell 中启动它`am start -n net.qiushao.activitytest/.MainActivity`：
-<br/>
-![singleTop](http://i3.tietuku.com/9764b2a04f27ee7e.png)
-<br/>
-提示Activity已经在栈顶了，不需要重新创建。再看任务栈，也的确没有重新创建。这就是singleTop启动模式。
+- singleInstance：启用一个新的栈结构，将对应的Acitvity放置于这个新的栈结构中，并保证不再有其他Activity实例进入。系统中只有一个对应的activity实例。
  
 ### 3. 任务栈task
+task是一个具有栈结构的容器，可以放置多个Activity实例。以栈的形式组织。遵守先进先出原则。所有的activity都归属于某一个栈，那系统怎么确定activity的归属栈呢？与三个方面相关：launchMode； taskAffinity；Intent Flags。launchMode前面已经说过了，这里就不再细说，下面我们来说说另外两个。
+#### 3.1. taskAffinity
+Affinity 翻译为亲和力，taskAffinity意味着task对activity的亲和力。指定自己要放在哪个栈中。拥有相同taskAffinity的多个Activity理论同属于一个task，task自身的taskAffinity决定于根Activity的taskAffinity值。
+默认情况下，一个应用内的所有Activity都具有相同的taskAffinity，都是从Application继承而来，而Application默认的taskAffinity是应用的包名，我们可以为Application设置taskAffinity属性值，这样可以应用到Application下的所有activity，也可以单独为某个Activity设置taskAffinity。
 
-### 4. intent-filter
+#### 3.2. Intent Flags
 
-### 5. activity间的交互
+### 4. Intent Filter
+
+### 5. Activity间的交互
 
 ### 6. 横竖屏切换
 
