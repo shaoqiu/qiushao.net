@@ -1,6 +1,6 @@
 Activity总结
 ------
-**create time: 2015-08-17; update time: 2015-08-17**
+**create time: 2015-08-17; update time: 2015-08-18**
 
 ---------------------------------------------------------------
 
@@ -53,6 +53,10 @@ Affinity 翻译为亲和力，taskAffinity意味着task对activity的亲和力�
 默认情况下，一个应用内的所有Activity都具有相同的taskAffinity，都是从Application继承而来，而Application默认的taskAffinity是应用的包名，我们可以为Application设置taskAffinity属性值，这样可以应用到Application下的所有activity，也可以单独为某个Activity设置taskAffinity。
 
 #### 3.2. Intent Flags
+在通过Intent启动Activity时，我们可以设置一些Intent Flags，来确定Activity的启动模式，这些标志位跟launchMode会有一些重复。假如launchMode的设置跟Intent Flags的设置有冲突，那实际会以Intent Flags的设置为准。这两者有什么区别呢？launchMode是规定你自己的Activity启动的行为模式，而Intent.Flag是你期望由你启动的其他的Activity是什么样的行为模式。还有一些标志跟任务栈相关。
+- FLAG_ACTIVITY_NEW_TASK ：当Intent对象包含这个标记时，系统会寻找或创建一个新的task来放置目标Activity，寻找时依据目标Activity的taskAffinity属性进行匹配，如果找到一个task的taskAffinity与之相同，就将目标Activity压入此task中，如果查找无果，则创建一个新的task，并将该task的taskAffinity设置为目标Activity的taskActivity，将目标Activity放置于此task。
+
+
 
 ### 4. Intent Filter
 
