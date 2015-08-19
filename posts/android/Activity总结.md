@@ -1,6 +1,6 @@
 Activity总结
 ------
-**create time: 2015-08-17; update time: 2015-08-18**
+**create time: 2015-08-17; update time: 2015-08-19**
 
 ---------------------------------------------------------------
 
@@ -65,3 +65,9 @@ Affinity 翻译为亲和力，taskAffinity意味着task对activity的亲和力�
 ### 6. 横竖屏切换
 
 ### 7. HistoryRecord
+在android系统中长按Home键会弹出一个历史应用列表，我们可以从这个列表中启动之前启动过的应用。但有时候我们并不希望自己的应用出现在历史列表中。我们可以设置`android:excludeFromRecents=true`，官方的解析如下：
+> Whether or not the task initiated by this activity should be excluded from the list of recently used applications ("recent apps"). That is, when this activity is the root activity of a new task, this attribute determines whether the task should not appear in the list of recent apps. "true" if the task should beexcluded from the list; "false" if it should be included. The default value is "false".
+
+如果一个Activity设置了这个属性之后，那么以这个Activity来初始化的任务栈，不会出现在历史任务列表中。也就是说，假如我们在应用的根Activity中加入了这个属性，那么从根Activity启动这个应用时，这个应用是不会被加入到历史任务中的。
+
+上面这种方法是在自身应用的代码中控制的。若是第三方的应用，我没有办法控制它的代码呢？我们可以在启动这个应用的Intent中加入一个标志`Intent.FLAG_ACTIVITY_NO_HISTORY`。那这个Intent所启动的任务也不会加入到历史任务列表中。
