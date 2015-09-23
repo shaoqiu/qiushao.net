@@ -6,11 +6,13 @@ android焦点的转移流程
 
 对于使用触屏操作的手机，平板来说是无所谓焦点的，手指想点哪里就点哪里。但对于TV这种使用遥控来操作的设备，焦点则是非常重要的。当屏幕上可获取焦点的控件很多时，焦点的转移方式，经常不符合我们的需求，所以需要我们加以控制，控制焦点的方法主要有两种
 1. requestFocus ：请求焦点，我们想让哪个控件获取焦点，就让它调用 requestFocus方法即可。
-2.  指定NextFocus：指定下一个焦点。焦点的转移往往是通过方向键来控制的。有上下左右四个方向键，我们可以分别指定按这些方向键，焦点要转移到哪个控件上。具体为：
-- android:nextFocusUp
-- android:nextFocusDown
-- android:nextFocusLeft
-- android:nextFocusRight
+2. 指定NextFocus：指定下一个焦点。焦点的转移往往是通过方向键来控制的。有上下左右四个方向键，我们可以分别指定按这些方向键，焦点要转移到哪个控件上。具体为：
+```
+android:nextFocusUp
+android:nextFocusDown
+android:nextFocusLeft
+android:nextFocusRight
+```
 
 这两种方法对于在布局文件上直接布局的控件来说基本上已经满足我们对焦点的控制需求了，但对于 ListView 这类动态添加的控件来说，往往会出现一些意想不到的焦点问题。焦点会乱跳！但由于控件是动态添加的，所以不好使用前面说的方法。正所谓知己知彼，才能百战百胜，为了能控制住焦点转移，我们需要了解它是怎样转移的。
 
